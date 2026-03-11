@@ -18,7 +18,7 @@ import { useUiStore } from '../store/useUiStore';
 const RothkoMaterial = shaderMaterial(
   {
     uTime: 0,
-    uColorBase: new THREE.Color('#180024'), // Deepest Dioxazine Violet
+    uColorBase: new THREE.Color('#0a0010'), // Deepest void (Guggenheim at Night)
     uColorMagenta: new THREE.Color('#E40078'), // Quinacridone Magenta
     uColorPG7: new THREE.Color('#005F56'), // Phthalo Green
     uResolution: new THREE.Vector2(),
@@ -34,6 +34,8 @@ const RothkoMaterial = shaderMaterial(
   `,
   // Fragment Shader
   `
+    precision mediump float;
+    
     uniform float uTime;
     uniform vec3 uColorBase;
     uniform vec3 uColorMagenta;
@@ -42,7 +44,7 @@ const RothkoMaterial = shaderMaterial(
     
     varying vec2 vUv;
 
-    // Fast Simplex 2D noise implementation
+    // Fast Simplex 2D noise implementation (Optimized)
     vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
     float snoise(vec2 v){
       const vec4 C = vec4(0.211324865405187, 0.366025403784439,
@@ -76,26 +78,30 @@ const RothkoMaterial = shaderMaterial(
       aspectUv.x *= uResolution.x / uResolution.y;
 
       // Create two offset, slow-moving noise layers for the blobs
-      float slowTime = uTime * 0.08;
+      float slowTime = uTime * 0.05;
       float noiseMagenta = snoise(aspectUv * 1.5 + vec2(slowTime, -slowTime));
       float noisePG7 = snoise(aspectUv * 1.8 - vec2(slowTime * 1.2, slowTime * 0.5) + 50.0);
 
-      // Distance vignette so Dioxazine Violet dominates the edges
-      // Mapping distance from center (0.5, 0.5)
+      // Distance vignette so dark void dominates the center
       float dist = distance(vUv, vec2(0.5, 0.5));
-      // Smooth fade: 1.0 at center, drops to 0.0 as it approaches 0.8
-      float vignette = smoothstep(0.8, 0.35, dist);
+      // smoothstep: 0 up to 0.4 distance from center, then ramps up to 1 at 1.2
+      // This ensures the center is almost entirely pure black void
+      float vignette = smoothstep(0.4, 1.2, dist);
 
       // Remap noise from [-1, 1] to [0, 1]
       noiseMagenta = noiseMagenta * 0.5 + 0.5;
       noisePG7 = noisePG7 * 0.5 + 0.5;
 
-      // Initial color starts at Violet Base
+      // Initial color starts at deep void
       vec3 finalColor = uColorBase;
 
-      // Softly mix in Magenta and PG7, heavily gated by the vignette to keep edges dark
-      finalColor = mix(finalColor, uColorMagenta, noiseMagenta * vignette * 0.85);
-      finalColor = mix(finalColor, uColorPG7, noisePG7 * vignette * 0.75);
+      // Softly mix in Magenta and PG7, heavily gated by vignette (edges only), with ghostly low intensity
+      finalColor = mix(finalColor, uColorMagenta, noiseMagenta * vignette * 0.35);
+      finalColor = mix(finalColor, uColorPG7, noisePG7 * vignette * 0.25);
+
+      // Add fine art print texture (subtle film grain)
+      float grain = fract(sin(dot(vUv, vec2(12.9898,78.233))) * 43758.5453);
+      finalColor += grain * 0.025;
 
       gl_FragColor = vec4(finalColor, 1.0);
     }
@@ -143,11 +149,11 @@ export const CanvasBackground = () => {
   return (
     <div className="fixed inset-0 z-0 pointer-events-none bg-void">
       {/* 
-        GPU Rule 1: Cap DPR to [1, 1.5] max. 
+        GPU Rule 1: Cap DPR to exactly 1. 
         Shader is soft by nature, downscaling saves immense fragment calculation overhead.
       */}
       <Canvas
-        dpr={[1, 1.5]}
+        dpr={1}
         orthographic
         camera={{ position: [0, 0, 1], zoom: 1 }}
         gl={{ 

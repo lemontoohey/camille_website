@@ -25,67 +25,59 @@ interface Artwork {
 
 /**
  * Single Artwork Card
- * - Hover intent
- * - Fluid hover states (scale-105 without breaking layout)
- * - Custom Vermillion cursor trigger
+ * - Fluid hover states
  * - Mapped dynamically from JSON
+ * - Uncropped Museum aesthetic
  */
 const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) => {
-  const setHoveringArtwork = useUiStore((state) => state.setHoveringArtwork);
 
-  // Handle Custom Hover Interactions for Custom Cursor
-  const handleMouseEnter = () => setHoveringArtwork(true);
-  const handleMouseLeave = () => setHoveringArtwork(false);
+  // Asymmetrical horizontal alignments
+  const getAlignmentClass = (i: number) => {
+    const alignments = ['self-start', 'self-center', 'self-end', 'self-center'];
+    return alignments[i % alignments.length];
+  };
 
-  // Determine an asymmetrical aspect ratio pattern strictly via CSS classes.
-  // We'll rotate between portrait, landscape, and square based on index to create a staggered feel.
-  const getAspectClass = (i: number) => {
-    const sequence = [
-      'aspect-[3/4] col-span-1 md:col-span-1', 
-      'aspect-[4/3] col-span-1 md:col-span-2',
-      'aspect-square col-span-1 md:col-span-1',
-      'aspect-[3/5] col-span-1 md:col-span-1',
-      'aspect-video col-span-1 md:col-span-2'
-    ];
-    return sequence[i % sequence.length];
+  // Variable maximum widths for true unconstrained scaling
+  const getWidthClass = (i: number) => {
+    const widths = ['max-w-xl', 'max-w-3xl', 'max-w-2xl', 'max-w-4xl'];
+    return widths[i % widths.length];
   };
 
   return (
     <article 
-      className={`artwork-card relative group flex flex-col gap-6 cursor-none w-full ${getAspectClass(index)}`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      className={`artwork-card relative group flex flex-col gap-10 w-full ${getAlignmentClass(index)} ${getWidthClass(index)}`}
     >
       {/* 
-        Container overflow-hidden maintains bounds while inner image scales. 
-        Will-change transforms ensure smooth hover transitions without repaints.
+        Container overflow-hidden maintains bounds while inner image scales.
+        Added the "Museum Glass" 1px border frame.
       */}
-      <div className="relative w-full h-full overflow-hidden bg-void/50 rounded-sm shadow-2xl shadow-black/40">
+      <div className="relative w-full overflow-hidden bg-void/50 rounded-[1px] shadow-2xl shadow-black/80 border border-parchment/10">
         <Image
           src={artwork.imagePath}
           alt={artwork.title}
-          fill
-          className="object-cover transition-transform duration-[700ms] lux-ease group-hover:scale-105 will-change-transform"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          width={1600}
+          height={1600}
+          className="w-full h-auto object-contain transition-transform duration-[1200ms] lux-ease group-hover:scale-[1.03] will-change-transform"
+          sizes="(max-width: 768px) 100vw, 80vw"
         />
         
         {/* Vermillion "View Details" - gracefully fades in */}
-        <div className="absolute inset-0 bg-void/30 opacity-0 group-hover:opacity-100 transition-opacity duration-[700ms] lux-ease flex items-center justify-center pointer-events-none">
-          <span className="text-vermillion font-sans text-sm tracking-widest uppercase">
+        <div className="absolute inset-0 bg-void/40 opacity-0 group-hover:opacity-100 transition-opacity duration-[700ms] lux-ease flex items-center justify-center pointer-events-none">
+          <span className="text-vermillion font-sans text-xs tracking-[0.2em] uppercase">
             View Details
           </span>
         </div>
       </div>
 
-      {/* Metadata Section with elegant typography */}
-      <div className="flex flex-col gap-2 px-1">
-        <div className="flex flex-row justify-between items-baseline gap-4">
-          <h2 className="text-parchment font-serif text-lg leading-tight">{artwork.title}</h2>
-          <p className="text-parchment font-sans tracking-widest text-sm font-light shrink-0">{artwork.price}</p>
+      {/* Metadata Section with strict museum hierarchy */}
+      <div className="flex flex-col gap-3 px-2 mt-4">
+        <div className="flex flex-row justify-between items-baseline gap-8">
+          <h2 className="text-parchment font-serif text-lg leading-tight tracking-wide">{artwork.title}</h2>
+          <p className="text-parchment font-sans tracking-[0.1em] text-sm font-light shrink-0">{artwork.price}</p>
         </div>
         <div className="flex flex-col gap-1">
-          <p className="text-parchment/70 font-sans text-sm font-light tracking-wide">{artwork.medium}</p>
-          <p className="text-parchment/70 font-sans text-sm font-light tracking-wide">{artwork.dimensions}</p>
+          <p className="text-parchment/50 font-sans text-xs font-light tracking-wider uppercase">{artwork.medium}</p>
+          <p className="text-parchment/50 font-sans text-xs font-light tracking-wider">{artwork.dimensions}</p>
         </div>
       </div>
     </article>
@@ -119,6 +111,9 @@ export const Gallery = () => {
           // Slight stagger based on row rendering
           delay: (i % 3) * 0.1, 
         }),
+        // Ensure animation triggers once and isn't locked to scroll position scrub
+        scrub: false,
+        once: true,
       });
     });
 
@@ -136,18 +131,15 @@ export const Gallery = () => {
   }, { scope: containerRef });
 
   return (
-    <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-32 z-10">
-      <header className="mb-32 flex flex-col gap-6 items-center text-center">
-        <h1 className="font-serif text-5xl md:text-7xl text-parchment drop-shadow-md">Selected Works</h1>
-        <p className="font-sans text-parchment/70 max-w-md font-light leading-relaxed">
-          An exploration of color, depth, and the emotional resonance of the void.
-        </p>
+    <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-20 z-10">
+      <header className="mb-48 flex flex-col gap-8 items-center text-center mt-12">
+        <h1 className="font-sans text-xs md:text-sm text-parchment tracking-[0.3em] uppercase opacity-70 drop-shadow-md">
+          Selected Works
+        </h1>
       </header>
 
-      {/* Asymmetrical Masonry Grid - Generous gaps & dynamic span columns */}
-      <div 
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-32 auto-rows-auto items-end"
-      >
+      {/* Single column stacked masonry with massive vertical spacing for art-first pacing */}
+      <div className="flex flex-col gap-y-64 items-start w-full pb-32">
         {(artworksData as Artwork[]).map((artwork, idx) => (
           <ArtworkCard key={artwork.id} artwork={artwork} index={idx} />
         ))}

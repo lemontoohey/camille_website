@@ -11,30 +11,33 @@ export const Providers = ({ children }: { children: ReactNode }) => {
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
-    // 1. Initialize Lenis for frictionless scroll
+    // 1. Initialize Lenis for frictionless scroll (Optimized for performance)
     const lenis = new Lenis({
+      lerp: 0.1,
       duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Smooth ease out
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: true,
-      wheelMultiplier: 1.05,
-      touchMultiplier: 2,
+      wheelMultiplier: 1,
+      syncTouch: true,
     });
     lenisRef.current = lenis;
 
     // Sync Lenis with GSAP ScrollTrigger
     lenis.on('scroll', ScrollTrigger.update);
 
-    // Frame update loop
-    const onFrame = (time: number) => {
-      lenis.raf(time);
-      ScrollTrigger.update();
+    // Frame update loop - Cleaner GSAP ticker implementation
+    const onFrame = (time: number, deltaTime: number) => {
+      // time parameter is in ms from GSAP, lenis expects ms as well
+      lenis.raf(time * 1000); 
     };
 
     gsap.ticker.add(onFrame);
-    // Remove ticker lag to ensure perfect sync
-    gsap.ticker.lagSmoothing(0);
+    
+    // Refresh ScrollTrigger after a tiny delay to ensure heights are calculated correctly
+    setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 100);
 
     return () => {
       lenis.destroy();

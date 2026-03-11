@@ -3,7 +3,6 @@ import { Playfair_Display, Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from '../components/Providers';
 import { CanvasBackground } from '../components/CanvasBackground';
-import { CustomCursor } from '../components/CustomCursor';
 import { CinematicLoader } from '../components/CinematicLoader';
 
 // Typography Tokens
@@ -25,7 +24,6 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Camille Wiseman | Fine Art Gallery',
   description: 'An immersive, cinematic headless e-commerce experience for fine artist Camille Wiseman.',
-  themeColor: '#180024',
 };
 
 export default function RootLayout({
@@ -35,16 +33,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable}`}>
-      <body className="bg-void text-parchment font-sans antialiased overflow-x-hidden selection:bg-vermillion selection:text-void cursor-none">
+      <body className="bg-void text-parchment font-sans antialiased overflow-x-hidden selection:bg-vermillion selection:text-void">
         
         {/* Cinematic Initial Load Experience */}
         <CinematicLoader />
 
         {/* Global WebGL Shader Layer - Fixed behind main content */}
         <CanvasBackground />
-
-        {/* The Vermillion Custom GSAP Cursor */}
-        <CustomCursor />
 
         {/* Client-side Providers wrapper (Lenis Smooth Scroll, Zustand Init, GSAP Registry) */}
         <Providers>

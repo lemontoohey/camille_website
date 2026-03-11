@@ -1,6 +1,26 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  /* Our Luxury Brand Colors - Guggenheim at Night */
+  --color-void: #0a0010;
+  --color-magenta: #E40078;
+  --color-pg7: #005F56;
+  --color-parchment: #FDF5E6;
+  --color-vermillion: #E34234;
+
+  /* Typography */
+  --font-sans: var(--font-inter), sans-serif;
+  --font-serif: var(--font-playfair), serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-void);
+  color: var(--color-parchment);
+}
 
 @layer utilities {
   .text-balance {
@@ -9,9 +29,7 @@
   .lux-ease {
     transition-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
   }
-}
-
-body {
-  background-color: #180024; /* void */
-  color: #FDF5E6; /* parchment */
+  .artwork-card {
+    will-change: transform, opacity;
+  }
 }
