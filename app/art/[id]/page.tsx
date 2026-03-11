@@ -1,4 +1,4 @@
-import artworksData from '../../../src/data/artworks.json';
+import artworksData from '@/src/data/artworks.json';
 import { ArtworkDetail } from './ArtworkDetail';
 
 export function generateStaticParams() {

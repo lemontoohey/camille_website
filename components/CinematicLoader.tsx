@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { useUiStore } from '../store/useUiStore';
+import { useUiStore } from '@/store/useUiStore';
 
 export const CinematicLoader = () => {
   const loaderRef = useRef<HTMLDivElement>(null);

@@ -100,10 +100,10 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
         whileInView={{ opacity: 1 }}
         viewport={{ once: true, margin: "-10%" }}
         transition={{ duration: 1.2, delay: ((index % 3) * 0.1) + 0.4 }}
-        className="flex flex-col gap-3 px-2 mt-4 cursor-pointer group/meta"
+        className="flex flex-col gap-3 px-2 sm:px-0 mt-4 cursor-pointer group/meta min-h-[44px] justify-center"
       >
         <div className="flex flex-row justify-between items-baseline gap-8">
-          <h2 className="text-parchment font-serif text-lg leading-tight tracking-wide group-hover/meta:text-vermillion transition-colors duration-500">
+          <h2 className="text-parchment font-serif text-base md:text-lg leading-tight tracking-wide group-hover/meta:text-vermillion transition-colors duration-500">
             {artwork.title}
           </h2>
           
@@ -152,7 +152,7 @@ export const Gallery = () => {
   }, { scope: containerRef });
 
   return (
-    <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-16 md:py-32 z-10 flex flex-col items-center">
+    <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-16 md:py-32 z-10 flex flex-col items-center">
       {/* Museum Catalog Number Style Header */}
       <header className="fixed top-1/3 left-4 md:left-8 z-50 pointer-events-none hidden md:block mix-blend-difference">
         <h1 className="font-sans text-[10px] text-parchment tracking-[0.5em] uppercase opacity-50 [writing-mode:vertical-rl] rotate-180">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useUiStore } from '../store/useUiStore';
+import { useUiStore } from '@/store/useUiStore';
 
 const SMALT_COLOR = 'rgba(64, 96, 96, 1)';
 

@@ -1,11 +1,11 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { shaderMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import { extend } from '@react-three/fiber';
-import { useUiStore } from '../store/useUiStore';
+import { useUiStore } from '@/store/useUiStore';
 
 const ParallaxBandsMaterial = shaderMaterial(
   {
@@ -105,24 +105,15 @@ const ShaderPlane = () => {
 };
 
 export const CanvasBackground = () => {
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log('[Camille] WebGL Shader Initialized');
-    }
-  }, []);
-
   return (
     <div className="fixed inset-0 z-0 pointer-events-none bg-void" style={{ zIndex: 0 }}>
       <Canvas
         dpr={1}
         orthographic
         camera={{ position: [0, 0, 1], zoom: 1 }}
-        gl={{
-          alpha: true,
-          antialias: false,
-          powerPreference: 'default',
-        }}
+        gl={{ alpha: true, antialias: false, powerPreference: 'default' }}
       >
+        <color attach="background" args={['#0a0010']} />
         <ShaderPlane />
       </Canvas>
     </div>

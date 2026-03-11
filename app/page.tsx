@@ -1,4 +1,4 @@
-import { Gallery } from '../components/Gallery';
+import { Gallery } from '@/components/Gallery';
 import Link from 'next/link';
 
 export default function Home() {
@@ -8,13 +8,13 @@ export default function Home() {
       <nav className="fixed top-12 right-6 md:right-12 z-50 flex flex-col gap-6 items-end pointer-events-auto">
         <Link 
           href="/about" 
-          className="text-parchment/50 hover:text-vermillion font-sans text-[10px] tracking-[0.4em] uppercase transition-colors duration-500"
+          className="text-parchment/50 hover:text-vermillion font-sans text-[10px] tracking-[0.4em] uppercase transition-colors duration-500 py-3 min-h-[44px] flex items-center"
         >
           [ The Artist ]
         </Link>
         <a 
           href="mailto:studio@camillewiseman.art" 
-          className="text-parchment/50 hover:text-vermillion font-sans text-[10px] tracking-[0.4em] uppercase transition-colors duration-500"
+          className="text-parchment/50 hover:text-vermillion font-sans text-[10px] tracking-[0.4em] uppercase transition-colors duration-500 py-3 min-h-[44px] flex items-center"
         >
           [ Studio ]
         </a>

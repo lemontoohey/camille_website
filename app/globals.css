@@ -22,4 +22,5 @@ body {
 .image-crack-wrapper {
   clip-path: inset(0 100% 0 0);
   will-change: clip-path;
+  transition: clip-path 1.2s cubic-bezier(0.22, 1, 0.36, 1);
 }

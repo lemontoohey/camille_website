@@ -3,8 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useUiStore } from '../../../store/useUiStore';
-import { useHapticSound } from '../../../hooks/useHapticSound';
+import { useUiStore } from '@/store/useUiStore';
+import { useHapticSound } from '@/hooks/useHapticSound';
 
 interface Artwork {
   id: string;
@@ -70,7 +70,7 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
         className="flex flex-col gap-8 md:gap-12 py-4 md:py-12"
       >
         <div className="flex flex-col gap-4 border-b border-parchment/10 pb-8">
-          <h1 className="text-parchment font-serif text-4xl md:text-6xl tracking-wide">{artwork.title}</h1>
+          <h1 className="text-parchment font-serif text-3xl sm:text-4xl md:text-6xl tracking-wide">{artwork.title}</h1>
           <p className="text-vermillion font-sans text-xl tracking-widest">{artwork.price}</p>
         </div>
 
@@ -94,7 +94,7 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
           <p className="text-parchment/30 not-italic">— Camille Wiseman, Artist Notes</p>
         </div>
 
-        <button className="self-start mt-8 px-12 py-4 border border-vermillion text-vermillion font-sans text-xs tracking-[0.4em] uppercase hover:bg-vermillion hover:text-void transition-all duration-700">
+        <button className="self-start mt-8 px-8 py-4 min-h-[48px] border border-vermillion text-vermillion font-sans text-xs tracking-[0.4em] uppercase hover:bg-vermillion hover:text-void transition-all duration-700">
           Inquire for Acquisition
         </button>
       </motion.div>

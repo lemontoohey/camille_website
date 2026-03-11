@@ -78,21 +78,21 @@ export default function AboutPage() {
       <div className="flex flex-col gap-48 w-full max-w-4xl">
         <blockquote className="artist-quote flex flex-col gap-8 items-start">
           <span className="text-vermillion font-sans text-[10px] tracking-[0.4em] uppercase">01 / Intent</span>
-          <p className="text-parchment font-serif text-3xl md:text-5xl leading-tight">
+          <p className="text-parchment font-serif text-2xl sm:text-3xl md:text-5xl leading-tight">
             "My work is not about what is seen, but about the space that allows seeing to occur."
           </p>
         </blockquote>
 
         <blockquote className="artist-quote flex flex-col gap-8 items-end text-right">
           <span className="text-vermillion font-sans text-[10px] tracking-[0.4em] uppercase">02 / Process</span>
-          <p className="text-parchment font-serif text-3xl md:text-5xl leading-tight max-w-2xl">
+          <p className="text-parchment font-serif text-2xl sm:text-3xl md:text-5xl leading-tight max-w-2xl">
             "I paint in the dark. It forces the hand to listen to the texture of the oil rather than the trick of the light."
           </p>
         </blockquote>
 
         <blockquote className="artist-quote flex flex-col gap-8 items-start">
           <span className="text-vermillion font-sans text-[10px] tracking-[0.4em] uppercase">03 / The Void</span>
-          <p className="text-parchment font-serif text-3xl md:text-5xl leading-tight max-w-2xl">
+          <p className="text-parchment font-serif text-2xl sm:text-3xl md:text-5xl leading-tight max-w-2xl">
             "The void is not empty. It is a dense, vibrating mass of potential color waiting for the viewer's eye to adjust."
           </p>
         </blockquote>
@@ -104,7 +104,7 @@ export default function AboutPage() {
           Camille Wiseman is a multidisciplinary artist based in the Pacific Northwest. 
           Her work has been exhibited at the Guggenheim, MoMA, and private collections globally.
         </p>
-        <Link href="/" className="text-parchment hover:text-vermillion font-sans text-xs tracking-[0.5em] uppercase transition-colors duration-500">
+        <Link href="/" className="text-parchment hover:text-vermillion font-sans text-xs tracking-[0.5em] uppercase transition-colors duration-500 py-3 min-h-[44px] flex items-center justify-center">
           Return to Collection
         </Link>
       </div>
