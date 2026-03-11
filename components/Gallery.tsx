@@ -51,7 +51,7 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
         Container overflow-hidden maintains bounds while inner image scales.
         Added the "Museum Glass" 1px border frame.
       */}
-      <div className="relative w-full overflow-hidden bg-void/50 rounded-[1px] shadow-2xl shadow-black/80 border border-parchment/10">
+      <div className="image-crack-wrapper relative w-full overflow-hidden bg-void/50 rounded-[1px] shadow-2xl shadow-black/80 border border-parchment/10">
         <Image
           src={artwork.imagePath}
           alt={artwork.title}
@@ -70,7 +70,7 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
       </div>
 
       {/* Metadata Section with strict museum hierarchy */}
-      <div className="flex flex-col gap-3 px-2 mt-4">
+      <div className="artwork-meta flex flex-col gap-3 px-2 mt-4">
         <div className="flex flex-row justify-between items-baseline gap-8">
           <h2 className="text-parchment font-serif text-lg leading-tight tracking-wide">{artwork.title}</h2>
           <p className="text-parchment font-sans tracking-[0.1em] text-sm font-light shrink-0">{artwork.price}</p>
@@ -96,25 +96,36 @@ export const Gallery = () => {
   useGSAP(() => {
     const cards = gsap.utils.toArray('.artwork-card');
 
-    // Setup initial state strictly with GPU-accelerated properties
-    gsap.set(cards, { y: 50, opacity: 0 });
-
     cards.forEach((card: any, i) => {
-      ScrollTrigger.create({
-        trigger: card,
-        start: 'top 85%',
-        animation: gsap.to(card, {
-          y: 0,
-          opacity: 1,
-          duration: 1.2,
-          ease: 'power3.out',
-          // Slight stagger based on row rendering
-          delay: (i % 3) * 0.1, 
-        }),
-        // Ensure animation triggers once and isn't locked to scroll position scrub
-        scrub: false,
-        once: true,
+      const wrapper = card.querySelector('.image-crack-wrapper');
+      const meta = card.querySelector('.artwork-meta');
+      
+      // Ensure initial CSS state
+      gsap.set(wrapper, { clipPath: 'inset(0 100% 0 0)' });
+      gsap.set(meta, { opacity: 0, y: 20 });
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: card,
+          start: 'top 85%',
+          once: true,
+        }
       });
+
+      // Apparition "Light through Cracks" Shutter Reveal
+      tl.to(wrapper, {
+        clipPath: 'inset(0 0% 0 0)',
+        duration: 1.6,
+        ease: 'power4.inOut',
+        delay: (i % 3) * 0.1,
+      })
+      // Fade in metadata smoothly afterwards
+      .to(meta, {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        ease: 'power3.out',
+      }, "-=0.8");
     });
 
     // GPU Rule 2: Pause the background shader entirely if we scroll far past the gallery
@@ -131,15 +142,23 @@ export const Gallery = () => {
   }, { scope: containerRef });
 
   return (
-    <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-20 z-10">
-      <header className="mb-48 flex flex-col gap-8 items-center text-center mt-12">
-        <h1 className="font-sans text-xs md:text-sm text-parchment tracking-[0.3em] uppercase opacity-70 drop-shadow-md">
+    <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-32 z-10 flex flex-col items-center">
+      {/* Museum Catalog Number Style Header */}
+      <header className="fixed top-32 left-8 z-50 pointer-events-none hidden md:block mix-blend-difference">
+        <h1 className="font-sans text-[10px] text-parchment tracking-[0.5em] uppercase opacity-50 transform -rotate-90 origin-top-left">
+          Selected Works
+        </h1>
+      </header>
+
+      {/* Mobile-only header variant */}
+      <header className="md:hidden w-full text-left mb-24 px-4">
+        <h1 className="font-sans text-[10px] text-parchment tracking-[0.5em] uppercase opacity-50">
           Selected Works
         </h1>
       </header>
 
       {/* Single column stacked masonry with massive vertical spacing for art-first pacing */}
-      <div className="flex flex-col gap-y-64 items-start w-full pb-32">
+      <div className="flex flex-col gap-y-96 items-start w-full pb-48">
         {(artworksData as Artwork[]).map((artwork, idx) => (
           <ArtworkCard key={artwork.id} artwork={artwork} index={idx} />
         ))}

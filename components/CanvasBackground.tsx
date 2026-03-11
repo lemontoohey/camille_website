@@ -15,13 +15,13 @@ import { useUiStore } from '../store/useUiStore';
  * Custom Fragment Shader Material with Simplex 2D Noise
  * Simulates a breathing, liquid Rothko painting.
  */
-const RothkoMaterial = shaderMaterial(
+const ParallaxBandsMaterial = shaderMaterial(
   {
-    uTime: 0,
-    uColorBase: new THREE.Color('#0a0010'), // Deepest void (Guggenheim at Night)
-    uColorMagenta: new THREE.Color('#E40078'), // Quinacridone Magenta
-    uColorPG7: new THREE.Color('#005F56'), // Phthalo Green
+    uScroll: 0,
     uResolution: new THREE.Vector2(),
+    uColorMagenta: new THREE.Color('#E40078'),
+    uColorPG7: new THREE.Color('#005F56'),
+    uColorViolet: new THREE.Color('#180024') // slightly lighter violet for the 3rd band
   },
   // Vertex Shader
   `
@@ -36,72 +36,51 @@ const RothkoMaterial = shaderMaterial(
   `
     precision mediump float;
     
-    uniform float uTime;
-    uniform vec3 uColorBase;
+    uniform float uScroll;
+    uniform vec2 uResolution;
     uniform vec3 uColorMagenta;
     uniform vec3 uColorPG7;
-    uniform vec2 uResolution;
+    uniform vec3 uColorViolet;
     
     varying vec2 vUv;
 
-    // Fast Simplex 2D noise implementation (Optimized)
-    vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
-    float snoise(vec2 v){
-      const vec4 C = vec4(0.211324865405187, 0.366025403784439,
-               -0.577350269189626, 0.024390243902439);
-      vec2 i  = floor(v + dot(v, C.yy) );
-      vec2 x0 = v -   i + dot(i, C.xx);
-      vec2 i1;
-      i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-      vec4 x12 = x0.xyxy + C.xxzz;
-      x12.xy -= i1;
-      i = mod(i, 289.0);
-      vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 ))
-      + i.x + vec3(0.0, i1.x, 1.0 ));
-      vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
-      m = m*m ;
-      m = m*m ;
-      vec3 x = 2.0 * fract(p * C.www) - 1.0;
-      vec3 h = abs(x) - 0.5;
-      vec3 ox = floor(x + 0.5);
-      vec3 a0 = x - ox;
-      m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
-      vec3 g;
-      g.x  = a0.x  * x0.x  + h.x  * x0.y;
-      g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-      return 130.0 * dot(m, g);
+    // Draw a vertical band with soft edges
+    // xPos: center of band, width: width of band, blur: softness
+    float drawBand(float uvX, float xPos, float width, float blur) {
+        float dist = abs(uvX - xPos);
+        return smoothstep(width + blur, width, dist);
     }
 
     void main() {
-      // Correct aspect ratio for uniform blob shapes
-      vec2 aspectUv = vUv;
-      aspectUv.x *= uResolution.x / uResolution.y;
+      vec2 uv = vUv;
+      
+      // Normalized scroll factor (adjust the multiplier for speed)
+      // We divide by a large number so scroll matches UV scale reasonably
+      float scrollOffset = uScroll * 0.0005;
 
-      // Create two offset, slow-moving noise layers for the blobs
-      float slowTime = uTime * 0.05;
-      float noiseMagenta = snoise(aspectUv * 1.5 + vec2(slowTime, -slowTime));
-      float noisePG7 = snoise(aspectUv * 1.8 - vec2(slowTime * 1.2, slowTime * 0.5) + 50.0);
+      // Band 1: Magenta (Fastest)
+      float pos1 = fract(0.2 + scrollOffset * 1.5);
+      float band1 = drawBand(uv.x, pos1, 0.05, 0.15);
 
-      // Distance vignette so dark void dominates the center
-      float dist = distance(vUv, vec2(0.5, 0.5));
-      // smoothstep: 0 up to 0.4 distance from center, then ramps up to 1 at 1.2
-      // This ensures the center is almost entirely pure black void
-      float vignette = smoothstep(0.4, 1.2, dist);
+      // Band 2: PG7 (Medium)
+      float pos2 = fract(0.6 - scrollOffset * 0.8);
+      float band2 = drawBand(uv.x, pos2, 0.08, 0.2);
 
-      // Remap noise from [-1, 1] to [0, 1]
-      noiseMagenta = noiseMagenta * 0.5 + 0.5;
-      noisePG7 = noisePG7 * 0.5 + 0.5;
+      // Band 3: Violet (Slowest)
+      float pos3 = fract(0.8 + scrollOffset * 0.4);
+      float band3 = drawBand(uv.x, pos3, 0.12, 0.25);
 
-      // Initial color starts at deep void
-      vec3 finalColor = uColorBase;
+      // Base color (The Void - Masstone)
+      vec3 finalColor = vec3(0.039, 0.0, 0.063); // #0a0010 approximation
 
-      // Softly mix in Magenta and PG7, heavily gated by vignette (edges only), with ghostly low intensity
-      finalColor = mix(finalColor, uColorMagenta, noiseMagenta * vignette * 0.35);
-      finalColor = mix(finalColor, uColorPG7, noisePG7 * vignette * 0.25);
+      // Additive blending for the ghostly bands (opacity 0.05 to 0.1)
+      finalColor += uColorMagenta * band1 * 0.08;
+      finalColor += uColorPG7 * band2 * 0.06;
+      finalColor += uColorViolet * band3 * 0.07;
 
-      // Add fine art print texture (subtle film grain)
-      float grain = fract(sin(dot(vUv, vec2(12.9898,78.233))) * 43758.5453);
-      finalColor += grain * 0.025;
+      // Optional subtle grain
+      float grain = fract(sin(dot(uv, vec2(12.9898,78.233))) * 43758.5453);
+      finalColor += grain * 0.015;
 
       gl_FragColor = vec4(finalColor, 1.0);
     }
@@ -109,7 +88,7 @@ const RothkoMaterial = shaderMaterial(
 );
 
 // Register the custom shader to Three Fiber
-extend({ RothkoMaterial });
+extend({ ParallaxBandsMaterial });
 
 /**
  * Inner Plane Component containing the Shader
@@ -123,7 +102,7 @@ const ShaderPlane = () => {
     if (isCanvasPaused) return;
     
     if (materialRef.current) {
-      materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
+      materialRef.current.uniforms.uScroll.value = window.scrollY;
       materialRef.current.uniforms.uResolution.value.set(
         state.size.width,
         state.size.height
@@ -136,7 +115,7 @@ const ShaderPlane = () => {
       {/* 2x2 Plane spanning the entire clip space */}
       <planeGeometry args={[2, 2]} />
       {/* @ts-ignore */}
-      <rothkoMaterial ref={materialRef} transparent={false} depthWrite={false} />
+      <parallaxBandsMaterial ref={materialRef} transparent={false} depthWrite={false} />
     </mesh>
   );
 };
