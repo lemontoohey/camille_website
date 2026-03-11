@@ -28,7 +28,8 @@ const RothkoMaterial = shaderMaterial(
     varying vec2 vUv;
     void main() {
       vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      // By passing the projection matrix, the 2x2 plane fills 100% of the screen!
+      gl_Position = vec4(position, 1.0);
     }
   `,
   // Fragment Shader

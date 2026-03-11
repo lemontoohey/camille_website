@@ -6,9 +6,12 @@
   .text-balance {
     text-wrap: balance;
   }
+  .lux-ease {
+    transition-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  }
 }
 
 body {
-  background-color: theme('colors.void');
-  color: theme('colors.parchment');
+  background-color: #180024; /* void */
+  color: #FDF5E6; /* parchment */
 }

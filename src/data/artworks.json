@@ -6,5 +6,45 @@
     "price": "$5,200",
     "dimensions": "24 x 36 in",
     "medium": "Oil, gold leaf, and resin on panel"
+  },
+  {
+    "id": "artwork-2",
+    "title": "Quinacridone Study",
+    "imagePath": "/placeholders/artwork-1.jpg",
+    "price": "$3,400",
+    "dimensions": "18 x 24 in",
+    "medium": "Oil on canvas"
+  },
+  {
+    "id": "artwork-3",
+    "title": "Phthalo Depths",
+    "imagePath": "/placeholders/artwork-1.jpg",
+    "price": "$6,800",
+    "dimensions": "40 x 60 in",
+    "medium": "Mixed media"
+  },
+  {
+    "id": "artwork-4",
+    "title": "Vermillion Edge",
+    "imagePath": "/placeholders/artwork-1.jpg",
+    "price": "$2,200",
+    "dimensions": "16 x 20 in",
+    "medium": "Oil on panel"
+  },
+  {
+    "id": "artwork-5",
+    "title": "Ethereal Descent",
+    "imagePath": "/placeholders/artwork-1.jpg",
+    "price": "$8,100",
+    "dimensions": "48 x 48 in",
+    "medium": "Acrylic and ash on raw linen"
+  },
+  {
+    "id": "artwork-6",
+    "title": "Chromatic Silence",
+    "imagePath": "/placeholders/artwork-1.jpg",
+    "price": "$4,500",
+    "dimensions": "36 x 48 in",
+    "medium": "Charcoal and pigment on paper"
   }
 ]
