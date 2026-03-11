@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, Transition } from 'framer-motion';
 import Image from 'next/image';
 import artworksData from '@/src/data/artworks.json';
 import { useUiStore } from '@/store/useUiStore';
@@ -22,8 +22,10 @@ const ApertureArtworkCard = ({ artwork, index }: { artwork: Artwork; index: numb
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
   const [isAcquiring, setIsAcquiring] = useState(false);
 
-  const revealTransition = { duration: 1.5, ease: [0.22, 1, 0.36, 1] };
-  const snapTransition = { duration: 0.4, ease: 'easeInOut' as const };
+  // Transition settings for the slow, heavy aperture reveal
+  const revealTransition: Transition = { duration: 1.5, ease: [0.22, 1, 0.36, 1] as const };
+  // Transition settings for the fast, mechanical "snap" on click
+  const snapTransition: Transition = { duration: 0.4, ease: 'circInOut' as const };
 
   const getWidthClass = (i: number) => {
     const widths = ['md:max-w-xl', 'md:max-w-3xl', 'md:max-w-2xl', 'md:max-w-4xl'];
