@@ -1,0 +1,5 @@
+node_modules/
+.next/
+.puppeteer-user-data/
+.env
+.DS_Store
