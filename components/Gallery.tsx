@@ -13,7 +13,6 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-// Strict interface matching our JSON to prevent crashes
 interface Artwork {
   id: string;
   title: string;
@@ -37,6 +36,15 @@ const ChromaticArtworkCard = ({ artwork, index }: { artwork: Artwork; index: num
     return alignments[i % alignments.length];
   };
 
+  // Robust path handling for Next.js Export vs Local Dev
+  const imageSrc = artwork.imagePath
+    ? process.env.NODE_ENV === 'production' && !artwork.imagePath.startsWith('http')
+      ? `/camille_website${artwork.imagePath}`
+      : artwork.imagePath
+    : process.env.NODE_ENV === 'production'
+      ? '/camille_website/placeholders/artwork-1.jpg'
+      : '/placeholders/artwork-1.jpg';
+
   return (
     <article
       ref={cardRef}
@@ -47,18 +55,13 @@ const ChromaticArtworkCard = ({ artwork, index }: { artwork: Artwork; index: num
         onClick={() => setIsTransitioning(true)}
         className="block w-full cursor-pointer"
       >
-        <div className="relative w-full aspect-[4/5] overflow-hidden bg-void shadow-[0_0_30px_rgba(150,40,20,0.15)] group-hover:shadow-[0_0_45px_rgba(150,40,20,0.35)] transition-shadow duration-700 border border-parchment/5">
-          {/* 1. The Actual Image (Starts slightly scaled up) */}
+        {/* The container starts with ZERO shadow. GSAP will animate it in. */}
+        <div
+          className="card-container relative w-full aspect-[4/5] overflow-hidden bg-void border border-parchment/5"
+          style={{ boxShadow: '0 0 0px rgba(150,40,20,0)' }}
+        >
           <Image
-            src={
-              artwork.imagePath
-                ? process.env.NODE_ENV === 'production'
-                  ? `/camille_website${artwork.imagePath}`
-                  : artwork.imagePath
-                : process.env.NODE_ENV === 'production'
-                  ? '/camille_website/placeholders/artwork-1.jpg'
-                  : '/placeholders/artwork-1.jpg'
-            }
+            src={imageSrc}
             alt={artwork.title}
             fill
             className="artwork-image object-cover scale-110 will-change-transform"
@@ -66,15 +69,9 @@ const ChromaticArtworkCard = ({ artwork, index }: { artwork: Artwork; index: num
             priority={index < 2}
           />
 
-          {/* 2. Benzimidazolone Underpainting (The Hot Glow) */}
-          <div className="benzi-overlay absolute inset-0 bg-benzi mix-blend-color opacity-100 will-change-opacity" />
-          <div className="benzi-solid absolute inset-0 bg-benzi opacity-60 will-change-opacity" />
-
-          {/* 3. Chromatic Curtains (Multiply to create Chromatic Black) */}
-          {/* Magenta slides RIGHT */}
-          <div className="curtain-magenta absolute inset-0 bg-magenta mix-blend-multiply opacity-95 origin-left will-change-transform z-10" />
-          {/* Green slides DOWN */}
-          <div className="curtain-pg7 absolute inset-0 bg-pg7 mix-blend-multiply opacity-95 origin-top will-change-transform z-10" />
+          {/* Benzimidazolone Overlays - Starts opaque, dissolves on scroll */}
+          <div className="benzi-overlay absolute inset-0 bg-benzi mix-blend-color opacity-100 z-10 will-change-opacity pointer-events-none" />
+          <div className="benzi-solid absolute inset-0 bg-benzi opacity-80 z-10 will-change-opacity pointer-events-none" />
         </div>
       </Link>
 
@@ -113,7 +110,6 @@ export const Gallery = () => {
 
   useGSAP(
     () => {
-      // 1. Pause WebGL Background when scrolling past gallery
       ScrollTrigger.create({
         trigger: containerRef.current,
         start: 'top bottom',
@@ -124,38 +120,33 @@ export const Gallery = () => {
         onLeaveBack: () => setCanvasPaused(true),
       });
 
-      // 2. Animate each Chromatic Card
       const cards = gsap.utils.toArray<HTMLElement>('.artwork-card');
 
       cards.forEach((card) => {
-        const curtainM = card.querySelector('.curtain-magenta');
-        const curtainG = card.querySelector('.curtain-pg7');
+        const container = card.querySelector('.card-container');
         const benziSolid = card.querySelector('.benzi-solid');
         const benziOverlay = card.querySelector('.benzi-overlay');
         const img = card.querySelector('.artwork-image');
         const meta = card.querySelector('.meta-block');
 
-        // The Scrubbing Timeline (Tied to user scroll)
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: card,
-            start: 'top 85%',
+            start: 'top 80%',
             end: 'center 45%',
             scrub: 1.5,
           },
         });
 
-        // Part 1: Pull the curtains away (Magenta Right, Green Down)
-        tl.to(curtainM, { xPercent: 100, ease: 'none' }, 0).to(curtainG, { yPercent: 100, ease: 'none' }, 0);
-
-        // Part 2: Fade the solid Benzi block quickly to reveal the image + blend overlay
-        tl.to(benziSolid, { opacity: 0, ease: 'power1.inOut' }, 0.2);
-
-        // Part 3: Slowly fade out the Benzi color-blend and scale image down to rest
-        tl.to(benziOverlay, { opacity: 0, ease: 'power2.inOut' }, 0.4).to(img, { scale: 1, ease: 'power2.out' }, 0.2);
-
-        // Part 4: Float up the text metadata
-        tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out' }, 0.5);
+        // THE GLOW TRANSFER:
+        // Fade out the solid brown over the image
+        tl.to([benziSolid, benziOverlay], { opacity: 0, ease: 'power2.inOut' }, 0)
+          // Simultaneously fade IN the glowing box-shadow on the outside
+          .to(container, { boxShadow: '0 0 50px 5px rgba(150,40,20,0.35)', ease: 'power2.inOut' }, 0)
+          // Settle the image scale
+          .to(img, { scale: 1, ease: 'power2.out' }, 0.1)
+          // Fade in the text
+          .to(meta, { opacity: 1, y: 0, ease: 'power2.out' }, 0.3);
       });
     },
     { scope: containerRef }
