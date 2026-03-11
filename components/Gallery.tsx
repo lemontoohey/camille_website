@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import gsap from 'gsap';
@@ -9,6 +8,7 @@ import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useUiStore } from '../store/useUiStore';
 import artworksData from '../src/data/artworks.json';
+import { useHapticSound } from '../hooks/useHapticSound';
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -20,7 +20,7 @@ interface Artwork {
   id: string;
   title: string;
   price: string;
-  imagePath: string;
+  colors: string[];
   dimensions: string;
   medium: string;
 }
@@ -34,6 +34,7 @@ interface Artwork {
  */
 const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) => {
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
+  const { playColorChord } = useHapticSound();
 
   // Asymmetrical horizontal alignments
   const getAlignmentClass = (i: number) => {
@@ -49,6 +50,7 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
 
   const handleLinkClick = () => {
     setIsTransitioning(true);
+    playColorChord(artwork.colors);
   };
 
   return (
@@ -66,18 +68,24 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-10%" }}
           transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: (index % 3) * 0.1 }}
-          className="relative w-full overflow-hidden bg-void/50 rounded-[1px] shadow-2xl shadow-black/80 border border-parchment/10 cursor-pointer"
+          className="relative w-full aspect-[4/5] overflow-hidden bg-void/50 rounded-[1px] shadow-2xl shadow-black/80 border border-parchment/10 cursor-pointer"
         >
-          <motion.div layoutId={`artwork-image-${artwork.id}`}>
-            <Image
-              src={artwork.imagePath}
-              alt={artwork.title}
-              width={1600}
-              height={1600}
-              className="w-full h-auto object-contain transition-transform duration-[1200ms] lux-ease group-hover:scale-[1.03] will-change-transform"
-              sizes="(max-width: 768px) 100vw, 80vw"
-              priority={index < 2} // prioritize first two images
-            />
+          <motion.div 
+            layoutId={`artwork-image-${artwork.id}`} 
+            className="absolute inset-0 w-full h-full transition-transform duration-[1200ms] lux-ease group-hover:scale-[1.03] will-change-transform"
+          >
+            {artwork.colors.map((color, idx) => (
+              <div
+                key={idx}
+                className="absolute shadow-[0_0_40px_rgba(0,0,0,0.8)] mix-blend-screen"
+                style={{
+                  backgroundColor: color,
+                  inset: `${idx * 15}%`,
+                  opacity: 0.9,
+                  mixBlendMode: idx > 0 ? 'overlay' : 'normal'
+                }}
+              />
+            ))}
           </motion.div>
           
           {/* Vermillion "View Details" - gracefully fades in */}

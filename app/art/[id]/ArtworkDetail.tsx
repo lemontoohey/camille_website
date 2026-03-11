@@ -1,15 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useUiStore } from '../../../store/useUiStore';
+import { useHapticSound } from '../../../hooks/useHapticSound';
 
 interface Artwork {
   id: string;
   title: string;
   price: string;
-  imagePath: string;
+  colors: string[];
   dimensions: string;
   medium: string;
 }
@@ -17,6 +17,7 @@ interface Artwork {
 export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
   const router = useRouter();
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
+  const { playColorChord } = useHapticSound();
 
   const handleBack = () => {
     setIsTransitioning(true);
@@ -34,16 +35,25 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
 
       <motion.div 
         layoutId={`artwork-container-${artwork.id}`}
-        className="relative w-full h-[60vh] md:h-full min-h-[400px] border border-parchment/10 bg-void/50"
+        className="relative w-full h-[60vh] md:h-[80vh] min-h-[400px] border border-parchment/10 bg-void/50 cursor-pointer shadow-2xl shadow-black overflow-hidden"
+        onClick={() => playColorChord(artwork.colors)}
       >
-        <motion.div layoutId={`artwork-image-${artwork.id}`} className="w-full h-full">
-          <Image
-            src={artwork.imagePath}
-            alt={artwork.title}
-            fill
-            className="object-contain p-4 md:p-12"
-            priority
-          />
+        <motion.div 
+          layoutId={`artwork-image-${artwork.id}`} 
+          className="absolute inset-0 w-full h-full transition-transform duration-[1200ms] hover:scale-[1.02] lux-ease"
+        >
+          {artwork.colors.map((color, idx) => (
+            <div
+              key={idx}
+              className="absolute shadow-[0_0_40px_rgba(0,0,0,0.8)] mix-blend-screen"
+              style={{
+                backgroundColor: color,
+                inset: `${idx * 15}%`,
+                opacity: 0.9,
+                mixBlendMode: idx > 0 ? 'overlay' : 'normal'
+              }}
+            />
+          ))}
         </motion.div>
       </motion.div>
 

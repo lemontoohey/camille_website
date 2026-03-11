@@ -4,11 +4,9 @@ import { ReactNode, useEffect, useRef } from 'react';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useHapticSound } from '../hooks/useHapticSound';
 
 export const Providers = ({ children }: { children: ReactNode }) => {
   const lenisRef = useRef<Lenis | null>(null);
-  const { triggerSound } = useHapticSound();
 
   useEffect(() => {
     // Register GSAP plugins inside useEffect to prevent SSR build errors
@@ -29,8 +27,6 @@ export const Providers = ({ children }: { children: ReactNode }) => {
     // Sync Lenis with GSAP ScrollTrigger
     lenis.on('scroll', (e: any) => {
       ScrollTrigger.update();
-      // Trigger Haptic Sound based on scroll velocity
-      triggerSound(e.velocity);
     });
 
     // Frame update loop - Cleaner GSAP ticker implementation
@@ -50,7 +46,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
       lenis.destroy();
       gsap.ticker.remove(onFrame);
     };
-  }, [triggerSound]);
+  }, []);
 
   return <>{children}</>;
 };
