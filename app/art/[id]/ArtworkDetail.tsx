@@ -18,14 +18,15 @@ interface Artwork {
 export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
   const router = useRouter();
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
-  const { playArtworkAtmosphere } = useHapticSound();
+  const { playArtworkAtmosphere, stopArtworkAtmosphere } = useHapticSound();
 
-  // Trigger sensory experience on mount
   useEffect(() => {
     playArtworkAtmosphere(artwork.colors);
-  }, [artwork.colors, playArtworkAtmosphere]);
+    return () => stopArtworkAtmosphere();
+  }, [artwork.colors, playArtworkAtmosphere, stopArtworkAtmosphere]);
 
   const handleBack = () => {
+    stopArtworkAtmosphere();
     setIsTransitioning(true);
     router.back();
   };

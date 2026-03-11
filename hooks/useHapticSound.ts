@@ -23,6 +23,7 @@ const hexToHue = (hex: string) => {
 
 export const useHapticSound = () => {
   const ctxRef = useRef<AudioContext | null>(null);
+  const activeGainRef = useRef<GainNode | null>(null);
 
   const initAudio = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -35,51 +36,73 @@ export const useHapticSound = () => {
     }
   }, []);
 
+  const stopArtworkAtmosphere = useCallback(() => {
+    if (!ctxRef.current || !activeGainRef.current) return;
+    const ctx = ctxRef.current;
+    const gainNode = activeGainRef.current;
+    const now = ctx.currentTime;
+
+    gainNode.gain.cancelScheduledValues(now);
+    gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 1);
+
+    setTimeout(() => {
+      gainNode.disconnect();
+      activeGainRef.current = null;
+    }, 1100);
+  }, []);
+
   useEffect(() => {
     return () => {
+      stopArtworkAtmosphere();
       if (ctxRef.current && ctxRef.current.state !== 'closed') {
         ctxRef.current.close();
       }
     };
-  }, []);
+  }, [stopArtworkAtmosphere]);
 
   const playArtworkAtmosphere = useCallback((colors: string[]) => {
     if (typeof window === 'undefined') return;
     initAudio();
     if (!ctxRef.current) return;
 
+    stopArtworkAtmosphere();
+
     const ctx = ctxRef.current;
     const now = ctx.currentTime;
-    
-    // 1. Calculate Base Frequency from primary color hue (Range: ~25Hz - 45Hz sub bass)
+
     const hue = colors.length > 0 ? hexToHue(colors[0]) : 0;
     const baseFreq = 25 + (hue / 360) * 20;
 
     const masterGain = ctx.createGain();
     masterGain.connect(ctx.destination);
-    
-    // Master envelope: Fade in, hold, fade out completely over ~10s
+    activeGainRef.current = masterGain;
+
     masterGain.gain.setValueAtTime(0, now);
     masterGain.gain.linearRampToValueAtTime(1.0, now + 1.0);
     masterGain.gain.setValueAtTime(1.0, now + 6.0);
     masterGain.gain.linearRampToValueAtTime(0, now + 10.0);
 
-    // --- OSCILLATOR 1: SUB BASS (Rises out of silence) ---
+    // --- SUB BASS ---
     const subOsc = ctx.createOscillator();
     subOsc.type = 'sine';
     subOsc.frequency.setValueAtTime(baseFreq, now);
-    
-    // "Harmonic jump": at t=2.0, glides up to a higher harmonic (e.g., 3rd harmonic)
     subOsc.frequency.setValueAtTime(baseFreq, now + 2.0);
     subOsc.frequency.exponentialRampToValueAtTime(baseFreq * 3, now + 2.5);
 
     const subGain = ctx.createGain();
     subGain.gain.setValueAtTime(0, now);
-    // Slowly rise out of silence over 2 seconds
     subGain.gain.linearRampToValueAtTime(0.6, now + 2.0);
 
-    // --- OSCILLATOR 2 & 3: L-R OSCILLATING TRIANGLE TEXTURE ---
-    // Start panning at t=2.5 when the harmonic jump finishes
+    // --- HARMONIC SINE: 65Hz, barely audible texture ---
+    const harmonicOsc = ctx.createOscillator();
+    harmonicOsc.type = 'sine';
+    harmonicOsc.frequency.setValueAtTime(65, now);
+    const harmonicGain = ctx.createGain();
+    harmonicGain.gain.setValueAtTime(0, now);
+    harmonicGain.gain.linearRampToValueAtTime(0.04, now + 2.5);
+
+    // --- STEREO PANNER: -0.2 to 0.2 range ---
     const panner = ctx.createStereoPanner();
     panner.pan.setValueAtTime(0, now);
 
@@ -87,60 +110,59 @@ export const useHapticSound = () => {
     panLfo.type = 'sine';
     panLfo.frequency.setValueAtTime(0, now);
     panLfo.frequency.setValueAtTime(0, now + 2.5);
-    // Quickly ramp up to a fast 4Hz L-R oscillation
-    panLfo.frequency.linearRampToValueAtTime(4, now + 3.0); 
+    panLfo.frequency.linearRampToValueAtTime(4, now + 3.0);
 
     const panLfoGain = ctx.createGain();
     panLfoGain.gain.setValueAtTime(0, now);
     panLfoGain.gain.setValueAtTime(0, now + 2.5);
-    // Subtle L-R sweep (lowered threshold so it's barely noticeable but creates texture)
-    panLfoGain.gain.linearRampToValueAtTime(0.15, now + 3.0); 
+    panLfoGain.gain.linearRampToValueAtTime(0.2, now + 3.0);
 
     panLfo.connect(panLfoGain);
     panLfoGain.connect(panner.pan);
 
+    // --- TRIANGLE TEXTURE ---
     const texGain = ctx.createGain();
     texGain.gain.setValueAtTime(0, now);
     texGain.gain.setValueAtTime(0, now + 2.5);
-    // Fade in triangular textures quickly at t=2.5
-    texGain.gain.linearRampToValueAtTime(0.15, now + 3.0); 
+    texGain.gain.linearRampToValueAtTime(0.12, now + 3.0);
 
     const texOsc1 = ctx.createOscillator();
     texOsc1.type = 'triangle';
-    texOsc1.frequency.setValueAtTime(baseFreq * 3 + 1.5, now + 2.5); // Slightly detuned
+    texOsc1.frequency.setValueAtTime(baseFreq * 2.5, now + 2.5);
 
     const texOsc2 = ctx.createOscillator();
     texOsc2.type = 'triangle';
-    texOsc2.frequency.setValueAtTime(baseFreq * 4 - 2.0, now + 2.5); // Add depth
+    texOsc2.frequency.setValueAtTime(baseFreq * 3.2, now + 2.5);
 
-    // Routing
     subOsc.connect(subGain);
     subGain.connect(panner);
-    
+    harmonicOsc.connect(harmonicGain);
+    harmonicGain.connect(panner);
     texOsc1.connect(texGain);
     texOsc2.connect(texGain);
     texGain.connect(panner);
-    
     panner.connect(masterGain);
 
-    // Start all
+    const stopTime = now + 10.5;
     subOsc.start(now);
+    harmonicOsc.start(now);
     panLfo.start(now);
     texOsc1.start(now + 2.5);
     texOsc2.start(now + 2.5);
 
-    // Stop all after 10.5s to ensure clean garbage collection
-    const stopTime = now + 10.5;
     subOsc.stop(stopTime);
+    harmonicOsc.stop(stopTime);
     panLfo.stop(stopTime);
     texOsc1.stop(stopTime);
     texOsc2.stop(stopTime);
 
     setTimeout(() => {
-      masterGain.disconnect();
+      if (activeGainRef.current === masterGain) {
+        masterGain.disconnect();
+        activeGainRef.current = null;
+      }
     }, 11000);
+  }, [initAudio, stopArtworkAtmosphere]);
 
-  }, [initAudio]);
-
-  return { playArtworkAtmosphere };
+  return { playArtworkAtmosphere, stopArtworkAtmosphere };
 };

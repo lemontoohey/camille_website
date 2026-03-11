@@ -4,44 +4,42 @@ import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { useUiStore } from '../store/useUiStore';
 
+const SMALT_COLOR = '#406060';
+
 export const PageTransition = () => {
-  const wipeRef = useRef<HTMLDivElement>(null);
+  const flashRef = useRef<HTMLDivElement>(null);
   const isTransitioning = useUiStore((state) => state.isTransitioning);
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
 
   useEffect(() => {
-    if (!wipeRef.current) return;
+    if (!flashRef.current) return;
 
     if (isTransitioning) {
-      const tl = gsap.timeline({
-        onComplete: () => {
-          // In a real scenario, this would be timed with the actual page load
-          // For now we simulate the exit wipe after a delay
-          setTimeout(() => {
-            gsap.to(wipeRef.current, {
-              scaleX: 0,
-              duration: 0.8,
-              ease: 'power4.inOut',
-              transformOrigin: 'right center',
-              onComplete: () => setIsTransitioning(false)
-            });
-          }, 400);
-        }
-      });
+      gsap.set(flashRef.current, { opacity: 0 });
 
-      tl.to(wipeRef.current, {
-        scaleX: 1,
-        duration: 0.8,
-        ease: 'power4.inOut',
-        transformOrigin: 'left center',
+      // 1. Flash to opacity 0.3 for 100ms
+      gsap.to(flashRef.current, {
+        opacity: 0.3,
+        duration: 0.1,
+        ease: 'none',
+        onComplete: () => {
+          // 2. Hold briefly, then dissolve back over 800ms
+          gsap.to(flashRef.current, {
+            opacity: 0,
+            duration: 0.8,
+            ease: 'power1.inOut',
+            onComplete: () => setIsTransitioning(false),
+          });
+        },
       });
     }
   }, [isTransitioning, setIsTransitioning]);
 
   return (
     <div
-      ref={wipeRef}
-      className="fixed inset-y-0 left-0 w-full bg-vermillion z-[300] scale-x-0 origin-left pointer-events-none"
+      ref={flashRef}
+      className="fixed inset-0 z-[300] pointer-events-none"
+      style={{ backgroundColor: SMALT_COLOR }}
     />
   );
 };
