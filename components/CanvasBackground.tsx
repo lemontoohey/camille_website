@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { shaderMaterial } from '@react-three/drei';
 import * as THREE from 'three';
@@ -16,13 +16,16 @@ const ParallaxBandsMaterial = shaderMaterial(
     uColorPG7: new THREE.Color('#004a50'),
     uColorViolet: new THREE.Color('#1a0a2e'),
   },
+  // Vertex Shader
   `
     varying vec2 vUv;
     void main() {
       vUv = uv;
-      gl_Position = vec4(position, 1.0);
+      // Safely lock to Z=0 to prevent camera clipping
+      gl_Position = vec4(position.xy, 0.0, 1.0);
     }
   `,
+  // Fragment Shader
   `
     precision mediump float;
 
@@ -42,7 +45,8 @@ const ParallaxBandsMaterial = shaderMaterial(
 
     void main() {
       vec2 uv = vUv;
-      float scrollOffset = uScroll * 0.0005;
+      // Make scroll effect slightly more pronounced
+      float scrollOffset = uScroll * 0.0008;
 
       vec3 finalColor = uColorBase;
 
@@ -53,15 +57,16 @@ const ParallaxBandsMaterial = shaderMaterial(
       float posM = fract(mPosAbs);
       float posG = fract(gPosAbs);
 
-      // Magenta: step/pow for sharp, low-frequency "snaps" (flashes)
+      // Magenta "snaps"
       float bandMRaw = drawBand(uv.x, posM, 0.04, 0.08);
       float flash = step(0.55, fract(scrollOffset * 0.12));
       float bandM = pow(bandMRaw, 2.0) * flash;
 
       float bandG = drawBand(uv.x, posG, 0.08, 0.2);
 
-      // Add bands on top of base void (additive, subtle light)
-      float opacity = 0.15;
+      // Base opacity boosted so it's visible against the dark void
+      float opacity = 0.45; 
+      
       finalColor += uColorMagenta * bandM * opacity;
       finalColor += uColorPG7 * bandG * opacity;
 
@@ -69,11 +74,14 @@ const ParallaxBandsMaterial = shaderMaterial(
       float bandV = drawBand(uv.x, posV, 0.12, 0.25);
       finalColor += uColorViolet * bandV * opacity * 0.8;
 
+      // Subtle Grain
       float grain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
-      finalColor += grain * 0.012;
+      finalColor += grain * 0.015;
+      
       finalColor = min(finalColor, vec3(1.0));
 
-      gl_FragColor = vec4(finalColor, 0.2);
+      // Output at full opacity! The transparency is handled in the math above.
+      gl_FragColor = vec4(finalColor, 1.0);
     }
   `
 );
@@ -99,21 +107,26 @@ const ShaderPlane = () => {
     <mesh>
       <planeGeometry args={[2, 2]} />
       {/* @ts-ignore */}
-      <parallaxBandsMaterial ref={materialRef} transparent={true} depthWrite={false} />
+      <parallaxBandsMaterial ref={materialRef} depthWrite={false} />
     </mesh>
   );
 };
 
 export const CanvasBackground = () => {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('[Camille] WebGL Shader Initialized');
+    }
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none bg-void" style={{ zIndex: 0 }}>
+    <div className="fixed inset-0 pointer-events-none bg-void" style={{ zIndex: 0 }}>
       <Canvas
         dpr={1}
         orthographic
         camera={{ position: [0, 0, 1], zoom: 1 }}
-        gl={{ alpha: true, antialias: false, powerPreference: 'default' }}
+        gl={{ antialias: false, powerPreference: 'default' }}
       >
-        <color attach="background" args={['#0a0010']} />
         <ShaderPlane />
       </Canvas>
     </div>
