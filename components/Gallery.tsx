@@ -57,12 +57,16 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
     >
       {/* 
         Container overflow-hidden maintains bounds while inner image scales.
-        Added the "Museum Glass" 1px border frame.
+        Using framer-motion for the reveal instead of heavy GSAP clip-paths.
       */}
-      <Link href={`/art/${artwork.id}`} onClick={handleLinkClick}>
+      <Link href={`/art/${artwork.id}`} onClick={handleLinkClick} className="block w-full">
         <motion.div 
           layoutId={`artwork-container-${artwork.id}`}
-          className="image-crack-wrapper relative w-full overflow-hidden bg-void/50 rounded-[1px] shadow-2xl shadow-black/80 border border-parchment/10 cursor-pointer"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-10%" }}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: (index % 3) * 0.1 }}
+          className="relative w-full overflow-hidden bg-void/50 rounded-[1px] shadow-2xl shadow-black/80 border border-parchment/10 cursor-pointer"
         >
           <motion.div layoutId={`artwork-image-${artwork.id}`}>
             <Image
@@ -72,6 +76,7 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
               height={1600}
               className="w-full h-auto object-contain transition-transform duration-[1200ms] lux-ease group-hover:scale-[1.03] will-change-transform"
               sizes="(max-width: 768px) 100vw, 80vw"
+              priority={index < 2} // prioritize first two images
             />
           </motion.div>
           
@@ -85,7 +90,13 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
       </Link>
 
       {/* Metadata Section with strict museum hierarchy and Vermillion Thread CTA */}
-      <div className="artwork-meta flex flex-col gap-3 px-2 mt-4 cursor-pointer group/meta">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true, margin: "-10%" }}
+        transition={{ duration: 1.2, delay: ((index % 3) * 0.1) + 0.4 }}
+        className="flex flex-col gap-3 px-2 mt-4 cursor-pointer group/meta"
+      >
         <div className="flex flex-row justify-between items-baseline gap-8">
           <h2 className="text-parchment font-serif text-lg leading-tight tracking-wide group-hover/meta:text-vermillion transition-colors duration-500">
             {artwork.title}
@@ -110,57 +121,20 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
           <p className="text-parchment/50 font-sans text-xs font-light tracking-wider uppercase">{artwork.medium}</p>
           <p className="text-parchment/50 font-sans text-xs font-light tracking-wider">{artwork.dimensions}</p>
         </div>
-      </div>
+      </motion.div>
     </article>
   );
 };
 
 /**
  * Gallery Masonry Grid
- * Animates artworks in gracefully strictly via Transform and Opacity.
  */
 export const Gallery = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const setCanvasPaused = useUiStore((state) => state.setCanvasPaused);
 
-  // useGSAP is perfect for React: handles cleanup automatically
   useGSAP(() => {
-    const cards = gsap.utils.toArray('.artwork-card');
-
-    cards.forEach((card: any, i) => {
-      const wrapper = card.querySelector('.image-crack-wrapper');
-      const meta = card.querySelector('.artwork-meta');
-      
-      // Ensure initial CSS state
-      gsap.set(wrapper, { clipPath: 'inset(0 100% 0 0)' });
-      gsap.set(meta, { opacity: 0, y: 20 });
-
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: card,
-          start: 'top 85%',
-          once: true,
-        }
-      });
-
-      // Apparition "Light through Cracks" Shutter Reveal
-      tl.to(wrapper, {
-        clipPath: 'inset(0 0% 0 0)',
-        duration: 1.6,
-        ease: 'power4.inOut',
-        delay: (i % 3) * 0.1,
-      })
-      // Fade in metadata smoothly afterwards
-      .to(meta, {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: 'power3.out',
-      }, "-=0.8");
-    });
-
     // GPU Rule 2: Pause the background shader entirely if we scroll far past the gallery
-    // using IntersectionObserver. We can use ScrollTrigger for this too:
     ScrollTrigger.create({
       trigger: containerRef.current,
       start: 'top bottom',

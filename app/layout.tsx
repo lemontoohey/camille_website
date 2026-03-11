@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { Playfair_Display, Inter } from 'next/font/google';
 import './globals.css';
 import dynamic from 'next/dynamic';
+import { Providers } from '../components/Providers';
 
-const Providers = dynamic(() => import('../components/Providers').then(mod => mod.Providers), { ssr: false });
+// Dynamically import heavy/browser-only aesthetic components so they don't block initial SSR HTML
 const CanvasBackground = dynamic(() => import('../components/CanvasBackground').then(mod => mod.CanvasBackground), { ssr: false });
 const CinematicLoader = dynamic(() => import('../components/CinematicLoader').then(mod => mod.CinematicLoader), { ssr: false });
 const GlintCursor = dynamic(() => import('../components/GlintCursor').then(mod => mod.GlintCursor), { ssr: false });

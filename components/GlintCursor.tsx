@@ -30,7 +30,7 @@ export const GlintCursor = () => {
   return (
     <div
       ref={glintRef}
-      className="fixed top-0 left-0 w-[60vmax] h-[60vmax] pointer-events-none z-[5] rounded-full"
+      className="fixed top-0 left-0 w-[60vmax] h-[60vmax] pointer-events-none z-[5] rounded-full will-change-transform"
       style={{
         background: 'radial-gradient(circle at center, rgba(253, 245, 230, 0.045), transparent 35%)',
       }}

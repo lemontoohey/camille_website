@@ -137,7 +137,7 @@ export const CanvasBackground = () => {
         camera={{ position: [0, 0, 1], zoom: 1 }}
         gl={{ 
           antialias: false, 
-          powerPreference: "high-performance",
+          powerPreference: "default",
           alpha: false 
         }}
       >
