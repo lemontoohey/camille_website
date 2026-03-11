@@ -6,8 +6,8 @@ import { motion } from 'framer-motion';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useUiStore } from '../store/useUiStore';
-import artworksData from '../src/data/artworks.json';
+import { useUiStore } from '@/store/useUiStore';
+import artworksData from '@/src/data/artworks.json';
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {

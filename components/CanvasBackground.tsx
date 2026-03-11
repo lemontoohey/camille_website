@@ -11,7 +11,7 @@ const ParallaxBandsMaterial = shaderMaterial(
   {
     uScroll: 0,
     uResolution: new THREE.Vector2(),
-    uColorBase: new THREE.Color('#2d0040'),
+    uColorBase: new THREE.Color('#0a0010'),
     uColorMagenta: new THREE.Color('#8a0060'),
     uColorPG7: new THREE.Color('#004a50'),
     uColorViolet: new THREE.Color('#1a0a2e'),
@@ -60,19 +60,20 @@ const ParallaxBandsMaterial = shaderMaterial(
 
       float bandG = drawBand(uv.x, posG, 0.08, 0.2);
 
-      // High transparency (0.15) - overlap forms chromatic black naturally
+      // Add bands on top of base void (additive, subtle light)
       float opacity = 0.15;
-      finalColor = mix(finalColor, uColorMagenta, bandM * opacity);
-      finalColor = mix(finalColor, uColorPG7, bandG * opacity);
+      finalColor += uColorMagenta * bandM * opacity;
+      finalColor += uColorPG7 * bandG * opacity;
 
       float posV = fract(0.8 + scrollOffset * 0.4);
       float bandV = drawBand(uv.x, posV, 0.12, 0.25);
-      finalColor = mix(finalColor, uColorViolet, bandV * opacity * 0.8);
+      finalColor += uColorViolet * bandV * opacity * 0.8;
 
       float grain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
       finalColor += grain * 0.012;
+      finalColor = min(finalColor, vec3(1.0));
 
-      gl_FragColor = vec4(finalColor, 1.0);
+      gl_FragColor = vec4(finalColor, 0.2);
     }
   `
 );
@@ -98,7 +99,7 @@ const ShaderPlane = () => {
     <mesh>
       <planeGeometry args={[2, 2]} />
       {/* @ts-ignore */}
-      <parallaxBandsMaterial ref={materialRef} transparent={false} depthWrite={false} />
+      <parallaxBandsMaterial ref={materialRef} transparent={true} depthWrite={false} />
     </mesh>
   );
 };
@@ -111,15 +112,15 @@ export const CanvasBackground = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none bg-void">
+    <div className="fixed inset-0 z-0 pointer-events-none bg-void" style={{ zIndex: 0 }}>
       <Canvas
         dpr={1}
         orthographic
         camera={{ position: [0, 0, 1], zoom: 1 }}
         gl={{
+          alpha: true,
           antialias: false,
           powerPreference: 'default',
-          alpha: false,
         }}
       >
         <ShaderPlane />

@@ -1,45 +1,44 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { useUiStore } from '../store/useUiStore';
 
-const SMALT_COLOR = '#406060';
+const SMALT_COLOR = 'rgba(64, 96, 96, 1)';
 
 export const PageTransition = () => {
-  const flashRef = useRef<HTMLDivElement>(null);
   const isTransitioning = useUiStore((state) => state.isTransitioning);
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
+  const [phase, setPhase] = useState<'idle' | 'flash' | 'dissolve'>('idle');
 
   useEffect(() => {
-    if (!flashRef.current) return;
-
     if (isTransitioning) {
-      gsap.set(flashRef.current, { opacity: 0 });
-
-      // 1. Flash to opacity 0.3 for 100ms
-      gsap.to(flashRef.current, {
-        opacity: 0.3,
-        duration: 0.1,
-        ease: 'none',
-        onComplete: () => {
-          // 2. Hold briefly, then dissolve back over 800ms
-          gsap.to(flashRef.current, {
-            opacity: 0,
-            duration: 0.8,
-            ease: 'power1.inOut',
-            onComplete: () => setIsTransitioning(false),
-          });
-        },
-      });
+      setPhase('flash');
     }
-  }, [isTransitioning, setIsTransitioning]);
+  }, [isTransitioning]);
 
   return (
-    <div
-      ref={flashRef}
-      className="fixed inset-0 z-[300] pointer-events-none"
+    <motion.div
+      className="fixed inset-0 z-[1000] pointer-events-none"
       style={{ backgroundColor: SMALT_COLOR }}
+      initial={{ opacity: 0 }}
+      animate={{
+        opacity: phase === 'flash' ? 0.3 : phase === 'dissolve' ? 0 : 0,
+      }}
+      transition={
+        phase === 'flash'
+          ? { duration: 0.1, ease: 'easeOut' }
+          : phase === 'dissolve'
+            ? { duration: 0.8, ease: [0.4, 0, 0.2, 1] }
+            : { duration: 0 }
+      }
+      onAnimationComplete={() => {
+        if (phase === 'flash') setPhase('dissolve');
+        else if (phase === 'dissolve') {
+          setPhase('idle');
+          setIsTransitioning(false);
+        }
+      }}
     />
   );
 };
