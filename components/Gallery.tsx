@@ -40,10 +40,10 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
     return alignments[i % alignments.length];
   };
 
-  // Variable maximum widths for true unconstrained scaling
+  // Variable maximum widths for true unconstrained scaling on desktop, full width on mobile
   const getWidthClass = (i: number) => {
-    const widths = ['max-w-xl', 'max-w-3xl', 'max-w-2xl', 'max-w-4xl'];
-    return widths[i % widths.length];
+    const widths = ['md:max-w-xl', 'md:max-w-3xl', 'md:max-w-2xl', 'md:max-w-4xl'];
+    return `w-full ${widths[i % widths.length]}`;
   };
 
   const handleLinkClick = () => {
@@ -152,23 +152,23 @@ export const Gallery = () => {
   }, { scope: containerRef });
 
   return (
-    <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-32 z-10 flex flex-col items-center">
+    <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-16 md:py-32 z-10 flex flex-col items-center">
       {/* Museum Catalog Number Style Header */}
-      <header className="fixed top-32 left-8 z-50 pointer-events-none hidden md:block mix-blend-difference">
-        <h1 className="font-sans text-[10px] text-parchment tracking-[0.5em] uppercase opacity-50 transform -rotate-90 origin-top-left">
+      <header className="fixed top-1/3 left-4 md:left-8 z-50 pointer-events-none hidden md:block mix-blend-difference">
+        <h1 className="font-sans text-[10px] text-parchment tracking-[0.5em] uppercase opacity-50 [writing-mode:vertical-rl] rotate-180">
           Selected Works
         </h1>
       </header>
 
       {/* Mobile-only header variant */}
-      <header className="md:hidden w-full text-left mb-24 px-4">
+      <header className="md:hidden w-full text-left mb-16 px-2">
         <h1 className="font-sans text-[10px] text-parchment tracking-[0.5em] uppercase opacity-50">
           Selected Works
         </h1>
       </header>
 
       {/* Single column stacked masonry with massive vertical spacing for art-first pacing */}
-      <div className="flex flex-col gap-y-96 items-start w-full pb-48">
+      <div className="flex flex-col gap-y-32 md:gap-y-96 items-start w-full pb-48">
         {(artworksData as Artwork[]).map((artwork, idx) => (
           <ArtworkCard key={artwork.id} artwork={artwork} index={idx} />
         ))}

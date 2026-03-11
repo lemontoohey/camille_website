@@ -31,17 +31,17 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-void pt-32 pb-24 px-6 md:px-12 flex flex-col md:grid md:grid-cols-2 gap-12 md:gap-24 overflow-hidden">
+    <div className="min-h-screen w-full bg-void pt-24 pb-24 px-6 md:px-12 flex flex-col md:grid md:grid-cols-2 gap-8 md:gap-24 overflow-x-hidden">
       <button 
         onClick={handleBack}
-        className="fixed top-12 left-6 md:left-12 z-50 text-parchment/50 hover:text-vermillion font-sans text-[10px] tracking-[0.3em] uppercase transition-colors duration-500"
+        className="fixed top-8 left-6 md:top-12 md:left-12 z-50 text-parchment/50 hover:text-vermillion font-sans text-[10px] tracking-[0.3em] uppercase transition-colors duration-500"
       >
         [ Back to Collection ]
       </button>
 
       <motion.div 
         layoutId={`artwork-container-${artwork.id}`}
-        className="relative w-full h-[60vh] md:h-[80vh] min-h-[400px] border border-parchment/10 bg-void/50 shadow-2xl shadow-black overflow-hidden"
+        className="relative w-full aspect-[4/5] md:aspect-auto md:h-[80vh] border border-parchment/10 bg-void/50 shadow-2xl shadow-black overflow-hidden mt-8 md:mt-0"
       >
         <motion.div 
           layoutId={`artwork-image-${artwork.id}`} 
@@ -63,10 +63,10 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
       </motion.div>
 
       <motion.div 
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8, duration: 1.2, ease: [0.22, 0.61, 0.36, 1] }}
-        className="flex flex-col gap-12 py-12"
+        className="flex flex-col gap-8 md:gap-12 py-4 md:py-12"
       >
         <div className="flex flex-col gap-4 border-b border-parchment/10 pb-8">
           <h1 className="text-parchment font-serif text-4xl md:text-6xl tracking-wide">{artwork.title}</h1>

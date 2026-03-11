@@ -66,10 +66,6 @@ const ParallaxBandsMaterial = shaderMaterial(
       float mPosAbs = 0.5 + scrollOffset * mSpeed;
       float gPosAbs = 0.5 + scrollOffset * gSpeed;
       
-      // Number of times Magenta has overtaken Green
-      float relativeDist = mPosAbs - gPosAbs;
-      float crossings = floor(relativeDist);
-      
       // Wrap for drawing
       float posM = fract(mPosAbs);
       float posG = fract(gPosAbs);
@@ -77,19 +73,23 @@ const ParallaxBandsMaterial = shaderMaterial(
       float bandM = drawBand(uv.x, posM, 0.08, 0.2);
       float bandG = drawBand(uv.x, posG, 0.08, 0.2);
 
-      // Layering: "switch everytime they separate"
-      // They cross paths, incrementing 'crossings'. We use even/odd to toggle the stacking order.
-      bool greenOnTop = mod(crossings, 2.0) == 0.0;
+      // Layering: Green is always on top.
+      // When they overlap, we want a "chromatic black" effect.
+      // Since our background is already black-ish (#0a0010), 
+      // we can achieve this by darkening the overlap before adding colors.
       
-      if (greenOnTop) {
-         // Magenta rendered first, Green rendered OVER Magenta
-         finalColor = mix(finalColor, uColorMagenta, bandM * 0.5);
-         finalColor = mix(finalColor, uColorPG7, bandG * 0.6);
-      } else {
-         // Green rendered first, Magenta rendered OVER Green
-         finalColor = mix(finalColor, uColorPG7, bandG * 0.6);
-         finalColor = mix(finalColor, uColorMagenta, bandM * 0.5);
-      }
+      float overlap = bandM * bandG;
+
+      // 1. Magenta always on the bottom
+      finalColor = mix(finalColor, uColorMagenta, bandM * 0.5);
+      
+      // 2. Green always on top
+      finalColor = mix(finalColor, uColorPG7, bandG * 0.6);
+
+      // 3. Chromatic black: dramatically pull down the lightness where they overlap
+      // This gives the illusion that they mix into a dense, dark void.
+      finalColor -= overlap * 0.6;
+      finalColor = max(finalColor, vec3(0.01)); // Prevent negative color values
 
       // Violet third band (Slowest)
       float posV = fract(0.8 + scrollOffset * 0.4);

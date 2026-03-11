@@ -93,8 +93,8 @@ export const useHapticSound = () => {
     const panLfoGain = ctx.createGain();
     panLfoGain.gain.setValueAtTime(0, now);
     panLfoGain.gain.setValueAtTime(0, now + 2.5);
-    // Full Left to Right sweep
-    panLfoGain.gain.linearRampToValueAtTime(0.8, now + 3.0); 
+    // Subtle L-R sweep (lowered threshold so it's barely noticeable but creates texture)
+    panLfoGain.gain.linearRampToValueAtTime(0.15, now + 3.0); 
 
     panLfo.connect(panLfoGain);
     panLfoGain.connect(panner.pan);

@@ -15,7 +15,7 @@ const config: Config = {
         magenta: '#E40078',     // WebGL layer 1 - Primary Quinacridone Magenta
         pg7: '#005F56',         // WebGL layer 2 - Phthalo Green
         parchment: '#FDF5E6',   // All typography - Warm parchment
-        vermillion: '#E34234',  // Strict accents - Custom cursor, buttons, loaders
+        vermillion: 'rgba(155, 27, 21, 0.85)', // Classical deep cadmium red that is a little bit transparent
       },
       fontFamily: {
         // High-contrast serif for H1/H2 titles
