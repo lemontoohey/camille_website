@@ -50,7 +50,15 @@ const ChromaticArtworkCard = ({ artwork, index }: { artwork: Artwork; index: num
         <div className="relative w-full aspect-[4/5] overflow-hidden bg-void shadow-[0_0_30px_rgba(150,40,20,0.15)] group-hover:shadow-[0_0_45px_rgba(150,40,20,0.35)] transition-shadow duration-700 border border-parchment/5">
           {/* 1. The Actual Image (Starts slightly scaled up) */}
           <Image
-            src={artwork.imagePath || '/placeholders/artwork-1.jpg'}
+            src={
+              artwork.imagePath
+                ? process.env.NODE_ENV === 'production'
+                  ? `/camille_website${artwork.imagePath}`
+                  : artwork.imagePath
+                : process.env.NODE_ENV === 'production'
+                  ? '/camille_website/placeholders/artwork-1.jpg'
+                  : '/placeholders/artwork-1.jpg'
+            }
             alt={artwork.title}
             fill
             className="artwork-image object-cover scale-110 will-change-transform"

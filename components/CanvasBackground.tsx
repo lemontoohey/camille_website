@@ -45,7 +45,6 @@ const ParallaxBandsMaterial = shaderMaterial(
 
     void main() {
       vec2 uv = vUv;
-      // Make scroll effect slightly more pronounced
       float scrollOffset = uScroll * 0.0008;
 
       vec3 finalColor = uColorBase;
@@ -57,30 +56,31 @@ const ParallaxBandsMaterial = shaderMaterial(
       float posM = fract(mPosAbs);
       float posG = fract(gPosAbs);
 
-      // Magenta "snaps"
-      float bandMRaw = drawBand(uv.x, posM, 0.04, 0.08);
-      float flash = step(0.55, fract(scrollOffset * 0.12));
-      float bandM = pow(bandMRaw, 2.0) * flash;
+      // --- SOFTER, WIDER MAGENTA ---
+      // Increased width to 0.1, massive blur to 0.5 for a "light leak" feel
+      float bandMRaw = drawBand(uv.x, posM, 0.1, 0.5);
+      
+      // Replaced harsh step() with a smooth sine wave so it breathes in gracefully and sooner
+      float flash = smoothstep(0.1, 0.9, sin(scrollOffset * 0.4) * 0.5 + 0.5);
+      float bandM = bandMRaw * flash;
 
-      float bandG = drawBand(uv.x, posG, 0.08, 0.2);
+      // --- SOFTER, WIDER GREEN ---
+      float bandG = drawBand(uv.x, posG, 0.15, 0.6);
 
-      // Base opacity boosted so it's visible against the dark void
       float opacity = 0.45; 
       
       finalColor += uColorMagenta * bandM * opacity;
       finalColor += uColorPG7 * bandG * opacity;
 
       float posV = fract(0.8 + scrollOffset * 0.4);
-      float bandV = drawBand(uv.x, posV, 0.12, 0.25);
+      float bandV = drawBand(uv.x, posV, 0.15, 0.5);
       finalColor += uColorViolet * bandV * opacity * 0.8;
 
-      // Subtle Grain
       float grain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
       finalColor += grain * 0.015;
       
       finalColor = min(finalColor, vec3(1.0));
 
-      // Output at full opacity! The transparency is handled in the math above.
       gl_FragColor = vec4(finalColor, 1.0);
     }
   `
