@@ -17,14 +17,15 @@ const nextConfig = {
         v8: false,
         perf_hooks: false,
         child_process: false,
-        worker_threads: false
+        worker_threads: false,
+        path: false,
+        os: false,
+        crypto: false,
+        stream: false,
       };
     }
     return config;
   },
-  // Since we defined custom Webpack fallback configurations above,
-  // we must let Next.js know to skip Turbopack or pass an empty config
-  turbopack: {}
 };
 
 export default nextConfig;
