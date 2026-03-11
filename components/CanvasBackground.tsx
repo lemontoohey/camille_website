@@ -47,6 +47,7 @@ const ParallaxBandsMaterial = shaderMaterial(
       vec2 uv = vUv;
       float scrollOffset = uScroll * 0.0008;
 
+      // The Void Base
       vec3 finalColor = uColorBase;
 
       float mSpeed = 1.8;
@@ -56,26 +57,26 @@ const ParallaxBandsMaterial = shaderMaterial(
       float posM = fract(mPosAbs);
       float posG = fract(gPosAbs);
 
-      // --- SOFTER, WIDER MAGENTA ---
-      // Increased width to 0.1, massive blur to 0.5 for a "light leak" feel
-      float bandMRaw = drawBand(uv.x, posM, 0.1, 0.5);
-      
-      // Replaced harsh step() with a smooth sine wave so it breathes in gracefully and sooner
+      // 1. Magenta: Very thin (0.015), soft blur (0.15)
+      float bandMRaw = drawBand(uv.x, posM, 0.015, 0.15);
       float flash = smoothstep(0.1, 0.9, sin(scrollOffset * 0.4) * 0.5 + 0.5);
       float bandM = bandMRaw * flash;
 
-      // --- SOFTER, WIDER GREEN ---
-      float bandG = drawBand(uv.x, posG, 0.15, 0.6);
+      // 2. Green: Slightly wider than Magenta (0.04), soft blur (0.25)
+      float bandG = drawBand(uv.x, posG, 0.04, 0.25);
 
-      float opacity = 0.45; 
+      // Higher opacity (0.6) but because they are thin, the void dominates
+      float opacity = 0.6; 
       
       finalColor += uColorMagenta * bandM * opacity;
       finalColor += uColorPG7 * bandG * opacity;
 
+      // Subtle violet atmospheric shift
       float posV = fract(0.8 + scrollOffset * 0.4);
-      float bandV = drawBand(uv.x, posV, 0.15, 0.5);
-      finalColor += uColorViolet * bandV * opacity * 0.8;
+      float bandV = drawBand(uv.x, posV, 0.1, 0.3);
+      finalColor += uColorViolet * bandV * opacity * 0.6;
 
+      // Subtle Grain
       float grain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
       finalColor += grain * 0.015;
       
