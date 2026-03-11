@@ -8,7 +8,6 @@ import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useUiStore } from '../store/useUiStore';
 import artworksData from '../src/data/artworks.json';
-import { useHapticSound } from '../hooks/useHapticSound';
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -34,7 +33,6 @@ interface Artwork {
  */
 const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) => {
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
-  const { playColorChord } = useHapticSound();
 
   // Asymmetrical horizontal alignments
   const getAlignmentClass = (i: number) => {
@@ -50,7 +48,6 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
 
   const handleLinkClick = () => {
     setIsTransitioning(true);
-    playColorChord(artwork.colors);
   };
 
   return (

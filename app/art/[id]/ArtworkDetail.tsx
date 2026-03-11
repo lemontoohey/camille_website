@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useUiStore } from '../../../store/useUiStore';
 import { useHapticSound } from '../../../hooks/useHapticSound';
@@ -17,7 +18,12 @@ interface Artwork {
 export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
   const router = useRouter();
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
-  const { playColorChord } = useHapticSound();
+  const { playArtworkAtmosphere } = useHapticSound();
+
+  // Trigger sensory experience on mount
+  useEffect(() => {
+    playArtworkAtmosphere(artwork.colors);
+  }, [artwork.colors, playArtworkAtmosphere]);
 
   const handleBack = () => {
     setIsTransitioning(true);
@@ -35,8 +41,7 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
 
       <motion.div 
         layoutId={`artwork-container-${artwork.id}`}
-        className="relative w-full h-[60vh] md:h-[80vh] min-h-[400px] border border-parchment/10 bg-void/50 cursor-pointer shadow-2xl shadow-black overflow-hidden"
-        onClick={() => playColorChord(artwork.colors)}
+        className="relative w-full h-[60vh] md:h-[80vh] min-h-[400px] border border-parchment/10 bg-void/50 shadow-2xl shadow-black overflow-hidden"
       >
         <motion.div 
           layoutId={`artwork-image-${artwork.id}`} 

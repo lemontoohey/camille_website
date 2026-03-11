@@ -45,7 +45,6 @@ const ParallaxBandsMaterial = shaderMaterial(
     varying vec2 vUv;
 
     // Draw a vertical band with soft edges
-    // xPos: center of band, width: width of band, blur: softness
     float drawBand(float uvX, float xPos, float width, float blur) {
         float dist = abs(uvX - xPos);
         return smoothstep(width + blur, width, dist);
@@ -54,29 +53,48 @@ const ParallaxBandsMaterial = shaderMaterial(
     void main() {
       vec2 uv = vUv;
       
-      // Normalized scroll factor (adjust the multiplier for speed)
-      // We divide by a large number so scroll matches UV scale reasonably
       float scrollOffset = uScroll * 0.0005;
 
-      // Band 1: Magenta (Fastest)
-      float pos1 = fract(0.2 + scrollOffset * 1.5);
-      float band1 = drawBand(uv.x, pos1, 0.05, 0.15);
-
-      // Band 2: PG7 (Medium)
-      float pos2 = fract(0.6 - scrollOffset * 0.8);
-      float band2 = drawBand(uv.x, pos2, 0.08, 0.2);
-
-      // Band 3: Violet (Slowest)
-      float pos3 = fract(0.8 + scrollOffset * 0.4);
-      float band3 = drawBand(uv.x, pos3, 0.12, 0.25);
-
       // Base color (The Void - Masstone)
-      vec3 finalColor = vec3(0.039, 0.0, 0.063); // #0a0010 approximation
+      vec3 finalColor = vec3(0.039, 0.0, 0.063);
 
-      // Additive blending for the ghostly bands (opacity 0.05 to 0.1)
-      finalColor += uColorMagenta * band1 * 0.08;
-      finalColor += uColorPG7 * band2 * 0.06;
-      finalColor += uColorViolet * band3 * 0.07;
+      // Speeds: Magenta moves faster than Green, causing separation
+      float mSpeed = 1.8;
+      float gSpeed = 0.6;
+      
+      // Absolute positions (unwrapped)
+      float mPosAbs = 0.5 + scrollOffset * mSpeed;
+      float gPosAbs = 0.5 + scrollOffset * gSpeed;
+      
+      // Number of times Magenta has overtaken Green
+      float relativeDist = mPosAbs - gPosAbs;
+      float crossings = floor(relativeDist);
+      
+      // Wrap for drawing
+      float posM = fract(mPosAbs);
+      float posG = fract(gPosAbs);
+      
+      float bandM = drawBand(uv.x, posM, 0.08, 0.2);
+      float bandG = drawBand(uv.x, posG, 0.08, 0.2);
+
+      // Layering: "switch everytime they separate"
+      // They cross paths, incrementing 'crossings'. We use even/odd to toggle the stacking order.
+      bool greenOnTop = mod(crossings, 2.0) == 0.0;
+      
+      if (greenOnTop) {
+         // Magenta rendered first, Green rendered OVER Magenta
+         finalColor = mix(finalColor, uColorMagenta, bandM * 0.5);
+         finalColor = mix(finalColor, uColorPG7, bandG * 0.6);
+      } else {
+         // Green rendered first, Magenta rendered OVER Green
+         finalColor = mix(finalColor, uColorPG7, bandG * 0.6);
+         finalColor = mix(finalColor, uColorMagenta, bandM * 0.5);
+      }
+
+      // Violet third band (Slowest)
+      float posV = fract(0.8 + scrollOffset * 0.4);
+      float bandV = drawBand(uv.x, posV, 0.12, 0.25);
+      finalColor = mix(finalColor, uColorViolet, bandV * 0.3);
 
       // Optional subtle grain
       float grain = fract(sin(dot(uv, vec2(12.9898,78.233))) * 43758.5453);
