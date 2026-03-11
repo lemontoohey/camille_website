@@ -3,12 +3,28 @@ const isProd = process.env.NODE_ENV === 'production';
 
 const nextConfig = {
   output: 'export',
-  // If you are NOT using a custom domain and are using username.github.io/camille_website, 
-  // you need this basePath so CSS and Images load correctly in production.
   basePath: isProd ? '/camille_website' : '',
   images: {
     unoptimized: true,
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Fixes npm packages that depend on Node.js modules
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        module: false,
+        v8: false,
+        perf_hooks: false,
+        child_process: false,
+        worker_threads: false
+      };
+    }
+    return config;
+  },
+  // Since we defined custom Webpack fallback configurations above,
+  // we must let Next.js know to skip Turbopack or pass an empty config
+  turbopack: {}
 };
 
 export default nextConfig;

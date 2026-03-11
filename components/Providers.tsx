@@ -1,14 +1,16 @@
 'use client';
 
 import { ReactNode, useEffect, useRef } from 'react';
-import Lenis from '@studio-freight/lenis';
+import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useHapticSound } from '../hooks/useHapticSound';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export const Providers = ({ children }: { children: ReactNode }) => {
   const lenisRef = useRef<Lenis | null>(null);
+  const { triggerSound } = useHapticSound();
 
   useEffect(() => {
     // 1. Initialize Lenis for frictionless scroll (Optimized for performance)
@@ -24,7 +26,11 @@ export const Providers = ({ children }: { children: ReactNode }) => {
     lenisRef.current = lenis;
 
     // Sync Lenis with GSAP ScrollTrigger
-    lenis.on('scroll', ScrollTrigger.update);
+    lenis.on('scroll', (e: any) => {
+      ScrollTrigger.update();
+      // Trigger Haptic Sound based on scroll velocity
+      triggerSound(e.velocity);
+    });
 
     // Frame update loop - Cleaner GSAP ticker implementation
     const onFrame = (time: number, deltaTime: number) => {

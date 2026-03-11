@@ -9,6 +9,9 @@ interface UiState {
   // Loader states
   hasLoaded: boolean;
   setHasLoaded: (loaded: boolean) => void;
+  // Transition state
+  isTransitioning: boolean;
+  setIsTransitioning: (transitioning: boolean) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -18,4 +21,6 @@ export const useUiStore = create<UiState>((set) => ({
   setHoveringArtwork: (hovering) => set({ isHoveringArtwork: hovering }),
   hasLoaded: false,
   setHasLoaded: (loaded) => set({ hasLoaded: loaded }),
+  isTransitioning: false,
+  setIsTransitioning: (transitioning) => set({ isTransitioning: transitioning }),
 }));

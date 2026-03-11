@@ -4,6 +4,8 @@ import './globals.css';
 import { Providers } from '../components/Providers';
 import { CanvasBackground } from '../components/CanvasBackground';
 import { CinematicLoader } from '../components/CinematicLoader';
+import { GlintCursor } from '../components/GlintCursor';
+import { PageTransition } from '../components/PageTransition';
 
 // Typography Tokens
 const playfair = Playfair_Display({
@@ -41,6 +43,10 @@ export default function RootLayout({
         {/* Global WebGL Shader Layer - Fixed behind main content */}
         <CanvasBackground />
 
+        {/* Sensory Interaction Layers */}
+        <GlintCursor />
+        <PageTransition />
+
         {/* Client-side Providers wrapper (Lenis Smooth Scroll, Zustand Init, GSAP Registry) */}
         <Providers>
           {/* Main content layer, rendered over WebGL background */}
@@ -53,3 +59,4 @@ export default function RootLayout({
     </html>
   );
 }
+

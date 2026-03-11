@@ -2,6 +2,8 @@
 
 import { useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -28,8 +30,10 @@ interface Artwork {
  * - Fluid hover states
  * - Mapped dynamically from JSON
  * - Uncropped Museum aesthetic
+ * - Shared layout ID for seamless expansion
  */
 const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) => {
+  const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
 
   // Asymmetrical horizontal alignments
   const getAlignmentClass = (i: number) => {
@@ -43,6 +47,10 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
     return widths[i % widths.length];
   };
 
+  const handleLinkClick = () => {
+    setIsTransitioning(true);
+  };
+
   return (
     <article 
       className={`artwork-card relative group flex flex-col gap-10 w-full ${getAlignmentClass(index)} ${getWidthClass(index)}`}
@@ -51,30 +59,53 @@ const ArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) =>
         Container overflow-hidden maintains bounds while inner image scales.
         Added the "Museum Glass" 1px border frame.
       */}
-      <div className="image-crack-wrapper relative w-full overflow-hidden bg-void/50 rounded-[1px] shadow-2xl shadow-black/80 border border-parchment/10">
-        <Image
-          src={artwork.imagePath}
-          alt={artwork.title}
-          width={1600}
-          height={1600}
-          className="w-full h-auto object-contain transition-transform duration-[1200ms] lux-ease group-hover:scale-[1.03] will-change-transform"
-          sizes="(max-width: 768px) 100vw, 80vw"
-        />
-        
-        {/* Vermillion "View Details" - gracefully fades in */}
-        <div className="absolute inset-0 bg-void/40 opacity-0 group-hover:opacity-100 transition-opacity duration-[700ms] lux-ease flex items-center justify-center pointer-events-none">
-          <span className="text-vermillion font-sans text-xs tracking-[0.2em] uppercase">
-            View Details
-          </span>
-        </div>
-      </div>
+      <Link href={`/art/${artwork.id}`} onClick={handleLinkClick}>
+        <motion.div 
+          layoutId={`artwork-container-${artwork.id}`}
+          className="image-crack-wrapper relative w-full overflow-hidden bg-void/50 rounded-[1px] shadow-2xl shadow-black/80 border border-parchment/10 cursor-pointer"
+        >
+          <motion.div layoutId={`artwork-image-${artwork.id}`}>
+            <Image
+              src={artwork.imagePath}
+              alt={artwork.title}
+              width={1600}
+              height={1600}
+              className="w-full h-auto object-contain transition-transform duration-[1200ms] lux-ease group-hover:scale-[1.03] will-change-transform"
+              sizes="(max-width: 768px) 100vw, 80vw"
+            />
+          </motion.div>
+          
+          {/* Vermillion "View Details" - gracefully fades in */}
+          <div className="absolute inset-0 bg-void/40 opacity-0 group-hover:opacity-100 transition-opacity duration-[700ms] lux-ease flex items-center justify-center pointer-events-none">
+            <span className="text-vermillion font-sans text-xs tracking-[0.2em] uppercase">
+              View Details
+            </span>
+          </div>
+        </motion.div>
+      </Link>
 
-      {/* Metadata Section with strict museum hierarchy */}
-      <div className="artwork-meta flex flex-col gap-3 px-2 mt-4">
+      {/* Metadata Section with strict museum hierarchy and Vermillion Thread CTA */}
+      <div className="artwork-meta flex flex-col gap-3 px-2 mt-4 cursor-pointer group/meta">
         <div className="flex flex-row justify-between items-baseline gap-8">
-          <h2 className="text-parchment font-serif text-lg leading-tight tracking-wide">{artwork.title}</h2>
-          <p className="text-parchment font-sans tracking-[0.1em] text-sm font-light shrink-0">{artwork.price}</p>
+          <h2 className="text-parchment font-serif text-lg leading-tight tracking-wide group-hover/meta:text-vermillion transition-colors duration-500">
+            {artwork.title}
+          </h2>
+          
+          {/* Vermillion Thread: Price strike-through to "Acquire" */}
+          <div className="relative overflow-hidden">
+            <div className="relative">
+              <span className="block text-parchment font-sans tracking-[0.1em] text-sm font-light transition-all duration-500 group-hover/meta:opacity-0 group-hover/meta:-translate-y-full">
+                {artwork.price}
+              </span>
+              <span className="absolute inset-0 block text-vermillion font-sans tracking-[0.1em] text-sm font-light translate-y-full opacity-0 transition-all duration-500 group-hover/meta:translate-y-0 group-hover/meta:opacity-100">
+                Acquire
+              </span>
+            </div>
+            {/* The actual "thread" line */}
+            <div className="absolute left-0 top-1/2 w-full h-[1px] bg-vermillion scale-x-0 origin-left transition-transform duration-500 ease-in-out group-hover/meta:scale-x-100" />
+          </div>
         </div>
+        
         <div className="flex flex-col gap-1">
           <p className="text-parchment/50 font-sans text-xs font-light tracking-wider uppercase">{artwork.medium}</p>
           <p className="text-parchment/50 font-sans text-xs font-light tracking-wider">{artwork.dimensions}</p>
