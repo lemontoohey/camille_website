@@ -13,6 +13,7 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
+// Strict interface matching our JSON to prevent crashes
 interface Artwork {
   id: string;
   title: string;
@@ -36,7 +37,7 @@ const ChromaticArtworkCard = ({ artwork, index }: { artwork: Artwork; index: num
     return alignments[i % alignments.length];
   };
 
-  // Robust path handling for Next.js Export vs Local Dev
+  // Robust path handling
   const imageSrc = artwork.imagePath
     ? process.env.NODE_ENV === 'production' && !artwork.imagePath.startsWith('http')
       ? `/camille_website${artwork.imagePath}`
@@ -55,23 +56,41 @@ const ChromaticArtworkCard = ({ artwork, index }: { artwork: Artwork; index: num
         onClick={() => setIsTransitioning(true)}
         className="block w-full cursor-pointer"
       >
-        {/* The container starts with ZERO shadow. GSAP will animate it in. */}
         <div
-          className="card-container relative w-full aspect-[4/5] overflow-hidden bg-void border border-parchment/5"
+          className="card-container relative w-full aspect-[4/5] bg-void border border-parchment/5"
           style={{ boxShadow: '0 0 0px rgba(150,40,20,0)' }}
         >
-          <Image
-            src={imageSrc}
-            alt={artwork.title}
-            fill
-            className="artwork-image object-cover scale-110 will-change-transform"
-            sizes="(max-width: 768px) 100vw, 70vw"
-            priority={index < 2}
-          />
+          {/* 1. THE REVEALED AREA (Starts at 0x0 size via clip-path) */}
+          <div
+            className="image-wrapper absolute inset-0 overflow-hidden will-change-transform"
+            style={{ clipPath: 'inset(0% 100% 100% 0%)' }}
+          >
+            <Image
+              src={imageSrc}
+              alt={artwork.title}
+              fill
+              className="artwork-image object-cover scale-110 will-change-transform"
+              sizes="(max-width: 768px) 100vw, 70vw"
+              priority={index < 2}
+            />
+            {/* The Hot Underpainting */}
+            <div className="benzi-overlay absolute inset-0 bg-benzi mix-blend-color opacity-100 z-10 pointer-events-none will-change-opacity" />
+            <div className="benzi-solid absolute inset-0 bg-benzi opacity-90 z-10 pointer-events-none will-change-opacity" />
+          </div>
 
-          {/* Benzimidazolone Overlays - Starts opaque, dissolves on scroll */}
-          <div className="benzi-overlay absolute inset-0 bg-benzi mix-blend-color opacity-100 z-10 will-change-opacity pointer-events-none" />
-          <div className="benzi-solid absolute inset-0 bg-benzi opacity-80 z-10 will-change-opacity pointer-events-none" />
+          {/* 2. THE SCANNERS */}
+          {/* Vertical Scanner (Moves Left to Right) */}
+          <div className="line-v absolute top-0 bottom-0 left-0 w-[2px] z-20 pointer-events-none translate-x-[-50%]">
+            <div className="line-v-magenta absolute inset-0 bg-magenta will-change-transform" />
+            {/* Green on top at 80% opacity mixes with Magenta underneath to create dark chromatic grey */}
+            <div className="line-v-green absolute inset-0 bg-pg7 opacity-80" />
+          </div>
+
+          {/* Horizontal Scanner (Moves Top to Bottom) */}
+          <div className="line-h absolute left-0 right-0 top-0 h-[2px] z-20 pointer-events-none translate-y-[-50%]">
+            <div className="line-h-magenta absolute inset-0 bg-magenta will-change-transform" />
+            <div className="line-h-green absolute inset-0 bg-pg7 opacity-80" />
+          </div>
         </div>
       </Link>
 
@@ -94,7 +113,6 @@ const ChromaticArtworkCard = ({ artwork, index }: { artwork: Artwork; index: num
             <div className="absolute left-0 top-1/2 w-full h-[1px] bg-benzi scale-x-0 origin-left transition-transform duration-500 ease-in-out group-hover:scale-x-100" />
           </div>
         </div>
-
         <div className="flex flex-col gap-1">
           <p className="text-parchment/40 font-sans text-xs font-light tracking-wider uppercase">{artwork.medium}</p>
           <p className="text-parchment/40 font-sans text-xs font-light tracking-wider">{artwork.dimensions}</p>
@@ -124,6 +142,11 @@ export const Gallery = () => {
 
       cards.forEach((card) => {
         const container = card.querySelector('.card-container');
+        const imageWrapper = card.querySelector('.image-wrapper');
+        const lineV = card.querySelector('.line-v');
+        const lineH = card.querySelector('.line-h');
+        const lineVMagenta = card.querySelector('.line-v-magenta');
+        const lineHMagenta = card.querySelector('.line-h-magenta');
         const benziSolid = card.querySelector('.benzi-solid');
         const benziOverlay = card.querySelector('.benzi-overlay');
         const img = card.querySelector('.artwork-image');
@@ -132,21 +155,36 @@ export const Gallery = () => {
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: card,
-            start: 'top 80%',
-            end: 'center 45%',
+            start: 'top 85%',
+            end: 'center 30%',
             scrub: 1.5,
           },
         });
 
-        // THE GLOW TRANSFER:
-        // Fade out the solid brown over the image
-        tl.to([benziSolid, benziOverlay], { opacity: 0, ease: 'power2.inOut' }, 0)
-          // Simultaneously fade IN the glowing box-shadow on the outside
-          .to(container, { boxShadow: '0 0 50px 5px rgba(150,40,20,0.35)', ease: 'power2.inOut' }, 0)
-          // Settle the image scale
-          .to(img, { scale: 1, ease: 'power2.out' }, 0.1)
-          // Fade in the text
-          .to(meta, { opacity: 1, y: 0, ease: 'power2.out' }, 0.3);
+        // Master timing runs from 0 to 100 for perfect synchronization
+
+        // 1. The Scan & Reveal: Clip path opens exactly with the moving lines
+        tl.to(imageWrapper, { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none', duration: 100 }, 0);
+        tl.to(lineV, { left: '100%', ease: 'none', duration: 100 }, 0);
+        tl.to(lineH, { top: '100%', ease: 'none', duration: 100 }, 0);
+
+        // 2. The Chromatic Aberration: Magenta pops out midway, then fuses back
+        tl.to(lineVMagenta, { x: -4, ease: 'sine.inOut', duration: 30 }, 20);
+        tl.to(lineVMagenta, { x: 0, ease: 'sine.inOut', duration: 30 }, 50);
+
+        tl.to(lineHMagenta, { y: -4, ease: 'sine.inOut', duration: 30 }, 20);
+        tl.to(lineHMagenta, { y: 0, ease: 'sine.inOut', duration: 30 }, 50);
+
+        // 3. The Alchemy: Brown dissolves to real image, transfers glow to outside
+        tl.to([benziSolid, benziOverlay], { opacity: 0, ease: 'power2.inOut', duration: 40 }, 40);
+        tl.to(container, { boxShadow: '0 0 45px 5px rgba(150,40,20,0.35)', ease: 'power2.inOut', duration: 40 }, 40);
+
+        // 4. Image Settles & Metadata Appears
+        tl.to(img, { scale: 1, ease: 'power2.out', duration: 40 }, 60);
+        tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 30 }, 70);
+
+        // 5. Lines fade out at the very end so they don't sit on the edge
+        tl.to([lineV, lineH], { opacity: 0, ease: 'power1.out', duration: 5 }, 95);
       });
     },
     { scope: containerRef }
