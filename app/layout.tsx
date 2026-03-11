@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { Playfair_Display, Inter } from 'next/font/google';
 import './globals.css';
-import { Providers } from '../components/Providers';
-import { CanvasBackground } from '../components/CanvasBackground';
-import { CinematicLoader } from '../components/CinematicLoader';
-import { GlintCursor } from '../components/GlintCursor';
-import { PageTransition } from '../components/PageTransition';
+import dynamic from 'next/dynamic';
+
+const Providers = dynamic(() => import('../components/Providers').then(mod => mod.Providers), { ssr: false });
+const CanvasBackground = dynamic(() => import('../components/CanvasBackground').then(mod => mod.CanvasBackground), { ssr: false });
+const CinematicLoader = dynamic(() => import('../components/CinematicLoader').then(mod => mod.CinematicLoader), { ssr: false });
+const GlintCursor = dynamic(() => import('../components/GlintCursor').then(mod => mod.GlintCursor), { ssr: false });
+const PageTransition = dynamic(() => import('../components/PageTransition').then(mod => mod.PageTransition), { ssr: false });
 
 // Typography Tokens
 const playfair = Playfair_Display({

@@ -7,6 +7,7 @@ export const useHapticSound = () => {
   const lastTriggerTime = useRef<number>(0);
 
   const initAudio = useCallback(() => {
+    if (typeof window === 'undefined') return;
     if (!audioCtxRef.current) {
       audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
@@ -16,6 +17,7 @@ export const useHapticSound = () => {
   }, []);
 
   const triggerSound = useCallback((velocity: number) => {
+    if (typeof window === 'undefined') return;
     const now = Date.now();
     // Throttle: 500ms, Threshold: 15
     if (now - lastTriggerTime.current < 500 || Math.abs(velocity) < 15) return;
