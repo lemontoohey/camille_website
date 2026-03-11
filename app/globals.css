@@ -4,16 +4,18 @@
 
 :root {
   --color-void: #0a0010;
+  --color-diox-rich: #160024;
   --color-magenta: #E40078;
   --color-pg7: #005F56;
   --color-parchment: #FDF5E6;
   --color-vermillion: #E34234;
+  --color-benzi: #962814;
   --font-sans: var(--font-inter), sans-serif;
   --font-serif: var(--font-playfair), serif;
 }
 
 body {
-  background-color: var(--color-void);
+  background-color: var(--color-diox-rich);
   color: var(--color-parchment);
   overflow-x: hidden;
 }
