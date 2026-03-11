@@ -1,18 +1,15 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
+:root {
   --color-void: #0a0010;
   --color-magenta: #E40078;
   --color-pg7: #005F56;
   --color-parchment: #FDF5E6;
   --color-vermillion: #E34234;
-
   --font-sans: var(--font-inter), sans-serif;
   --font-serif: var(--font-playfair), serif;
-}
-
-:root {
-  background: var(--color-void);
 }
 
 body {

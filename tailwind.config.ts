@@ -5,12 +5,13 @@ const config: Config = {
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
       colors: {
         // Luxury Digital Gallery Tokens
-        void: '#180024',        // Deepest background - Masstone Dioxazine Violet
+        void: '#0a0010',        // Deepest background - Masstone Dioxazine Violet (Guggenheim at Night)
         magenta: '#E40078',     // WebGL layer 1 - Primary Quinacridone Magenta
         pg7: '#005F56',         // WebGL layer 2 - Phthalo Green
         parchment: '#FDF5E6',   // All typography - Warm parchment
