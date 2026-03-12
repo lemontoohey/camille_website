@@ -17,7 +17,7 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uColorPaper: new THREE.Color('#0c0614'),
     uColorPG7: new THREE.Color('#003038'),
     uColorMagenta: new THREE.Color('#6b0038'),
-    uColorGlow: new THREE.Color('#8ab4f8'),
+    uColorGlow: new THREE.Color('#7c3aed'),
     uColorViolet: new THREE.Color('#5c3d70'), // Light violet for particles
   },
   `
