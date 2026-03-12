@@ -138,9 +138,10 @@ export const Gallery = () => {
           },
         });
 
-        // 1. The Alchemy: Brown dissolves to real image. Hot Benzi core bleeds into deep red-violet drop shadow (bottom-right).
+        // 1. The Alchemy: Brown dissolves to real image.
+        // Tightened, weighty shadow. Deep red-violet grounds it, Benzi brown provides the hot core.
         tl.to([benziSolid, benziOverlay], { opacity: 0, ease: 'power2.inOut', duration: 50 }, 0);
-        tl.to(container, { boxShadow: '30px 40px 80px -10px rgba(75,10,40,0.9), 15px 20px 40px 5px rgba(150,40,20,0.6), -5px -5px 15px rgba(150,40,20,0.1)', ease: 'power2.inOut', duration: 50 }, 0);
+        tl.to(container, { boxShadow: '0 25px 50px -12px rgba(45,5,20,0.8), 0 10px 20px -5px rgba(150,40,20,0.5), 0 0 10px rgba(150,40,20,0.15)', ease: 'power2.inOut', duration: 50 }, 0);
 
         // 2. Image Settles & Metadata Appears
         tl.to(img, { scale: 1, ease: 'power2.out', duration: 40 }, 20);

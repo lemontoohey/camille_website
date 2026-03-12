@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { shaderMaterial } from '@react-three/drei';
 import * as THREE from 'three';
@@ -12,13 +12,11 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uTime: 0,
     uScroll: 0,
     uVelocity: 0,
-    uMouse: new THREE.Vector2(0.5, 0.5),
     uResolution: new THREE.Vector2(),
     uColorBase: new THREE.Color('#05000c'),
     uColorPG7: new THREE.Color('#004a50'),
     uColorDust: new THREE.Color('#2d0040'),
     uColorMagenta: new THREE.Color('#e40078'),
-    uColorBenzi: new THREE.Color('#962814'),
     uColorPaper: new THREE.Color('#2a0044'),
   },
   `
@@ -33,13 +31,11 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uniform float uTime;
     uniform float uScroll;
     uniform float uVelocity;
-    uniform vec2 uMouse;
     uniform vec2 uResolution;
     uniform vec3 uColorBase;
     uniform vec3 uColorPG7;
     uniform vec3 uColorDust;
     uniform vec3 uColorMagenta;
-    uniform vec3 uColorBenzi;
     uniform vec3 uColorPaper;
     varying vec2 vUv;
 
@@ -67,45 +63,46 @@ const ArchivalCanvasMaterial = shaderMaterial(
       vec2 uv = vUv;
       float scrollOffset = uScroll * 0.0008;
 
-      // 1. PAPER TOOTH / RAW CANVAS (restored to subtle)
+      // 1. PAPER TOOTH
       vec2 toothUV = uv * (uResolution.x / uResolution.y) * 450.0;
       float grainBase = random(toothUV);
       float organicTooth = noise(uv * 200.0);
       float toothPattern = mix(grainBase, organicTooth, 0.5);
       toothPattern = smoothstep(0.35, 0.65, toothPattern);
-      vec3 finalColor = mix(uColorBase, uColorPaper, toothPattern * 0.45);
+      vec3 finalColor = mix(uColorBase, uColorPaper, toothPattern * 0.75);
 
-      // 2. CHROMATIC GREY BAND (Interactive: cursor + scroll illumination)
+      // 2. CHROMATIC GREY BAND (Felt, Not Seen)
       float posB = fract(0.5 + scrollOffset * 0.6);
       float band = drawBand(uv.x, posB, 0.02, 0.1); 
-      vec3 chromaticGrey = mix(uColorPG7, uColorMagenta, 0.4);
+      
+      // True Chromatic Grey: Mixing complementary PG7 and Magenta, then muting with paper tone
+      vec3 rawChromatic = mix(uColorPG7, uColorMagenta, 0.48); 
+      vec3 chromaticGrey = mix(rawChromatic, uColorPaper, 0.35); 
 
-      vec2 aspectUv = uv * vec2(uResolution.x / uResolution.y, 1.0);
-      vec2 aspectMouse = uMouse * vec2(uResolution.x / uResolution.y, 1.0);
-      float mouseDist = distance(aspectUv, aspectMouse);
-      float mouseLight = smoothstep(0.35, 0.0, mouseDist) * 1.5;
+      // Deep Friction Light: Extremely subtle. Peaks at a very low opacity.
+      // Smooth falloff from the center to edges so it feels volumetric.
+      float barCenterMask = smoothstep(0.0, 0.4, uv.y) * smoothstep(1.0, 0.6, uv.y);
+      float scrollLight = smoothstep(0.1, 8.0, abs(uVelocity)) * barCenterMask * 0.18;
 
-      float barCenterMask = smoothstep(0.0, 0.15, uv.y) * smoothstep(1.0, 0.85, uv.y);
-      float scrollLight = smoothstep(0.1, 5.0, abs(uVelocity)) * barCenterMask * 1.2;
-
-      float activeLight = max(mouseLight, scrollLight);
-      float bandOpacity = 0.05 + (activeLight * 0.8);
+      // Base opacity is nearly invisible (0.02), max light only raises it slightly. Creates weight.
+      float bandOpacity = 0.02 + scrollLight; 
       finalColor += chromaticGrey * band * bandOpacity;
 
-      // 3. PARTICLES (restored: light violet on top, Benzi brown instead of magenta)
+      // 3. PARTICLES
       vec2 particleUV = uv * vec2(uResolution.x / uResolution.y, 1.0) * 2.0;
 
       float slowTime = uTime * 0.03;
       float noiseDiox = random(particleUV + slowTime);
       float dustDiox = pow(noiseDiox, 65.0);
-      finalColor += uColorDust * dustDiox * 0.8;
+      finalColor += uColorDust * dustDiox * 1.0;
 
       float fastTime = uTime * 0.08;
-      vec2 benziParticleUV = uv * vec2(uResolution.x / uResolution.y, 1.0) * 2.5; 
-      float noiseBenzi = random(benziParticleUV - fastTime);
-      float dustBenzi = pow(noiseBenzi, 75.0); 
-      finalColor += uColorBenzi * dustBenzi * 0.9;
+      vec2 magParticleUV = uv * vec2(uResolution.x / uResolution.y, 1.0) * 2.5; 
+      float noiseMag = random(magParticleUV - fastTime);
+      float dustMag = pow(noiseMag, 45.0); 
+      finalColor += uColorMagenta * dustMag * 2.5;
 
+      // Screen Grain
       float screenGrain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
       finalColor += screenGrain * 0.015;
 
@@ -123,16 +120,6 @@ const ShaderPlane = () => {
   const scrollVelocity = useUiStore((state) => state.scrollVelocity);
 
   const velocityTracker = useRef({ value: 0 });
-  const mouseTracker = useRef({ x: 0.5, y: 0.5 });
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseTracker.current.x = e.clientX / window.innerWidth;
-      mouseTracker.current.y = 1.0 - e.clientY / window.innerHeight;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
 
   useFrame((state) => {
     if (isCanvasPaused) return;
@@ -143,7 +130,6 @@ const ShaderPlane = () => {
       materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
       materialRef.current.uniforms.uScroll.value = window.scrollY;
       materialRef.current.uniforms.uVelocity.value = velocityTracker.current.value;
-      materialRef.current.uniforms.uMouse.value.set(mouseTracker.current.x, mouseTracker.current.y);
       materialRef.current.uniforms.uResolution.value.set(state.size.width, state.size.height);
     }
   });
@@ -157,7 +143,7 @@ const ShaderPlane = () => {
   );
 };
 
-const CanvasBackgroundComponent = () => {
+export const CanvasBackground = React.memo(() => {
   return (
     <div className="fixed inset-0 pointer-events-none bg-void" style={{ zIndex: 0 }}>
       <Canvas
@@ -170,7 +156,6 @@ const CanvasBackgroundComponent = () => {
       </Canvas>
     </div>
   );
-};
+});
 
-export const CanvasBackground = React.memo(CanvasBackgroundComponent);
 CanvasBackground.displayName = 'CanvasBackground';
