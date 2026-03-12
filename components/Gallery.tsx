@@ -56,7 +56,9 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
       >
         <div
           className="card-container relative w-full aspect-[4/5] bg-void"
-          style={{ boxShadow: '0 25px 50px -15px rgba(0,0,0,0.8), 0 0 0px rgba(150,40,20,0)' }}
+          style={{ 
+            boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 20px 2px rgba(150,40,20,0.15)' 
+          }}
         >
           <div className="image-wrapper absolute inset-0 overflow-hidden will-change-transform">
             <Image
@@ -123,7 +125,6 @@ export const Gallery = () => {
       const cards = gsap.utils.toArray<HTMLElement>('.artwork-card');
 
       cards.forEach((card) => {
-        const container = card.querySelector('.card-container');
         const benziSolid = card.querySelector('.benzi-solid');
         const benziOverlay = card.querySelector('.benzi-overlay');
         const img = card.querySelector('.artwork-image');
@@ -132,20 +133,16 @@ export const Gallery = () => {
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: card,
-            start: 'top 80%',
-            end: 'center 40%',
-            scrub: 1.5,
+            start: 'top 85%',
+            end: 'center 45%',
+            scrub: 1.2,
           },
         });
 
-        // 1. The Alchemy: Brown dissolves to real image.
-        // Tightened, weighty shadow. Deep red-violet grounds it, Benzi brown provides the hot core.
-        tl.to([benziSolid, benziOverlay], { opacity: 0, ease: 'power2.inOut', duration: 50 }, 0);
-        tl.to(container, { boxShadow: '0 25px 50px -12px rgba(45,5,20,0.8), 0 10px 20px -5px rgba(150,40,20,0.5), 0 0 10px rgba(150,40,20,0.15)', ease: 'power2.inOut', duration: 50 }, 0);
-
-        // 2. Image Settles & Metadata Appears
-        tl.to(img, { scale: 1, ease: 'power2.out', duration: 40 }, 20);
-        tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 30 }, 40);
+        // Elegant Institutional Reveal: No jumping shadows. Just a smooth dissolve of the Benzi underpainting.
+        tl.to([benziSolid, benziOverlay], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
+        tl.to(img, { scale: 1, ease: 'power2.out', duration: 1 }, 0);
+        tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.8 }, 0.2);
       });
     },
     { scope: containerRef }

@@ -43,7 +43,7 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
       <motion.div 
         layoutId={`artwork-container-${artwork.id}`}
         className="relative w-full aspect-[4/5] md:aspect-auto md:h-[80vh] bg-void/50 overflow-hidden mt-8 md:mt-0"
-        style={{ boxShadow: '0 25px 50px -12px rgba(45,5,20,0.8), 0 10px 20px -5px rgba(150,40,20,0.5), 0 0 10px rgba(150,40,20,0.15)' }}
+        style={{ boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 20px 2px rgba(150,40,20,0.15)' }}
       >
         <motion.div 
           layoutId={`artwork-image-${artwork.id}`} 

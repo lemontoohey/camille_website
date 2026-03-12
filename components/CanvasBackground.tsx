@@ -13,11 +13,11 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uScroll: 0,
     uVelocity: 0,
     uResolution: new THREE.Vector2(),
-    uColorBase: new THREE.Color('#05000c'),
-    uColorPG7: new THREE.Color('#004a50'),
-    uColorDust: new THREE.Color('#2d0040'),
-    uColorMagenta: new THREE.Color('#e40078'),
-    uColorPaper: new THREE.Color('#2a0044'),
+    uColorBase: new THREE.Color('#030008'),
+    uColorPaper: new THREE.Color('#0c0614'),
+    uColorPG7: new THREE.Color('#003038'),
+    uColorMagenta: new THREE.Color('#6b0038'),
+    uColorGlow: new THREE.Color('#8ab4f8'),
   },
   `
     varying vec2 vUv;
@@ -33,10 +33,10 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uniform float uVelocity;
     uniform vec2 uResolution;
     uniform vec3 uColorBase;
-    uniform vec3 uColorPG7;
-    uniform vec3 uColorDust;
-    uniform vec3 uColorMagenta;
     uniform vec3 uColorPaper;
+    uniform vec3 uColorPG7;
+    uniform vec3 uColorMagenta;
+    uniform vec3 uColorGlow;
     varying vec2 vUv;
 
     float drawBand(float uvX, float xPos, float width, float blur) {
@@ -48,63 +48,38 @@ const ArchivalCanvasMaterial = shaderMaterial(
         return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
     }
 
-    float noise(vec2 st) {
-        vec2 i = floor(st);
-        vec2 f = fract(st);
-        float a = random(i);
-        float b = random(i + vec2(1.0, 0.0));
-        float c = random(i + vec2(0.0, 1.0));
-        float d = random(i + vec2(1.0, 1.0));
-        vec2 u = f * f * (3.0 - 2.0 * f);
-        return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-    }
-
     void main() {
       vec2 uv = vUv;
       float scrollOffset = uScroll * 0.0008;
 
-      // 1. PAPER TOOTH
-      vec2 toothUV = uv * (uResolution.x / uResolution.y) * 450.0;
+      // 1. ULTRA-SUBTLE PAPER TOOTH
+      vec2 toothUV = uv * (uResolution.x / uResolution.y) * 600.0;
       float grainBase = random(toothUV);
-      float organicTooth = noise(uv * 200.0);
-      float toothPattern = mix(grainBase, organicTooth, 0.5);
-      toothPattern = smoothstep(0.35, 0.65, toothPattern);
-      vec3 finalColor = mix(uColorBase, uColorPaper, toothPattern * 0.75);
+      float toothPattern = smoothstep(0.45, 0.55, grainBase);
+      vec3 finalColor = mix(uColorBase, uColorPaper, toothPattern * 0.15);
 
-      // 2. CHROMATIC GREY BAND (Felt, Not Seen)
+      // 2. CHROMATIC GREY BAND & PALE BLUE FRICTION LIGHT
       float posB = fract(0.5 + scrollOffset * 0.6);
-      float band = drawBand(uv.x, posB, 0.02, 0.1); 
+      float band = drawBand(uv.x, posB, 0.015, 0.15); 
       
-      // True Chromatic Grey: Mixing complementary PG7 and Magenta, then muting with paper tone
-      vec3 rawChromatic = mix(uColorPG7, uColorMagenta, 0.48); 
-      vec3 chromaticGrey = mix(rawChromatic, uColorPaper, 0.35); 
+      vec3 chromaticGrey = mix(uColorPG7, uColorMagenta, 0.5); 
 
-      // Deep Friction Light: Extremely subtle. Peaks at a very low opacity.
-      // Smooth falloff from the center to edges so it feels volumetric.
-      float barCenterMask = smoothstep(0.0, 0.4, uv.y) * smoothstep(1.0, 0.6, uv.y);
-      float scrollLight = smoothstep(0.1, 8.0, abs(uVelocity)) * barCenterMask * 0.18;
+      float barCenterMask = smoothstep(0.0, 0.3, uv.y) * smoothstep(1.0, 0.7, uv.y);
+      float scrollLight = smoothstep(0.1, 6.0, abs(uVelocity)) * barCenterMask;
 
-      // Base opacity is nearly invisible (0.02), max light only raises it slightly. Creates weight.
-      float bandOpacity = 0.02 + scrollLight; 
-      finalColor += chromaticGrey * band * bandOpacity;
+      vec3 bandColor = mix(chromaticGrey, uColorGlow, scrollLight * 0.6);
+      
+      float bandOpacity = 0.02 + (scrollLight * 0.06); 
+      finalColor += bandColor * band * bandOpacity;
 
-      // 3. PARTICLES
+      // 3. BARELY-THERE PARTICLES
       vec2 particleUV = uv * vec2(uResolution.x / uResolution.y, 1.0) * 2.0;
+      float noiseMag = random(particleUV - (uTime * 0.04));
+      float dustMag = pow(noiseMag, 90.0);
+      finalColor += uColorMagenta * dustMag * 0.15; 
 
-      float slowTime = uTime * 0.03;
-      float noiseDiox = random(particleUV + slowTime);
-      float dustDiox = pow(noiseDiox, 65.0);
-      finalColor += uColorDust * dustDiox * 1.0;
-
-      float fastTime = uTime * 0.08;
-      vec2 magParticleUV = uv * vec2(uResolution.x / uResolution.y, 1.0) * 2.5; 
-      float noiseMag = random(magParticleUV - fastTime);
-      float dustMag = pow(noiseMag, 45.0); 
-      finalColor += uColorMagenta * dustMag * 2.5;
-
-      // Screen Grain
       float screenGrain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
-      finalColor += screenGrain * 0.015;
+      finalColor += screenGrain * 0.008;
 
       finalColor = min(finalColor, vec3(1.0));
       gl_FragColor = vec4(finalColor, 1.0);
@@ -118,13 +93,11 @@ const ShaderPlane = () => {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const isCanvasPaused = useUiStore((state) => state.isCanvasPaused);
   const scrollVelocity = useUiStore((state) => state.scrollVelocity);
-
   const velocityTracker = useRef({ value: 0 });
 
   useFrame((state) => {
     if (isCanvasPaused) return;
-
-    velocityTracker.current.value += (scrollVelocity - velocityTracker.current.value) * 0.08;
+    velocityTracker.current.value += (scrollVelocity - velocityTracker.current.value) * 0.05;
 
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
@@ -146,16 +119,10 @@ const ShaderPlane = () => {
 export const CanvasBackground = React.memo(() => {
   return (
     <div className="fixed inset-0 pointer-events-none bg-void" style={{ zIndex: 0 }}>
-      <Canvas
-        dpr={1}
-        orthographic
-        camera={{ position: [0, 0, 1], zoom: 1 }}
-        gl={{ antialias: false, powerPreference: 'default' }}
-      >
+      <Canvas dpr={1} orthographic camera={{ position: [0, 0, 1], zoom: 1 }} gl={{ antialias: false, powerPreference: 'default' }}>
         <ShaderPlane />
       </Canvas>
     </div>
   );
 });
-
 CanvasBackground.displayName = 'CanvasBackground';
