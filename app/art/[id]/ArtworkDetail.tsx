@@ -32,7 +32,7 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-void pt-24 pb-24 px-6 md:px-12 flex flex-col md:grid md:grid-cols-2 gap-8 md:gap-24 overflow-x-hidden">
+    <div className="min-h-screen w-full bg-void px-6 md:px-12 flex flex-col md:grid md:grid-cols-2 gap-8 md:gap-24 overflow-x-hidden pt-[max(6rem,env(safe-area-inset-top))] pb-[max(6rem,env(safe-area-inset-bottom))] md:pt-24 md:pb-24">
       <button 
         onClick={handleBack}
         className="fixed top-8 left-6 md:top-12 md:left-12 z-50 text-parchment/50 hover:text-vermillion font-sans text-[10px] tracking-[0.3em] uppercase transition-colors duration-500"

@@ -12,6 +12,7 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uTime: 0,
     uScroll: 0,
     uVelocity: 0,
+    uMobile: 0,
     uResolution: new THREE.Vector2(),
     uColorBase: new THREE.Color('#06000c'),
     uColorPaper: new THREE.Color('#0c0614'),
@@ -32,6 +33,7 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uniform float uTime;
     uniform float uScroll;
     uniform float uVelocity;
+    uniform float uMobile;
     uniform vec2 uResolution;
     uniform vec3 uColorBase;
     uniform vec3 uColorPaper;
@@ -71,8 +73,9 @@ const ArchivalCanvasMaterial = shaderMaterial(
 
       vec3 bandColor = mix(chromaticGrey, uColorGlow, scrollLight * 0.6);
       
-      float bandOpacity = 0.04 + (scrollLight * 0.12); 
-      finalColor += bandColor * band * bandOpacity;
+      float bandOpacity = 0.04 + (scrollLight * 0.12);
+      float topBottomMask = mix(1.0, barCenterMask, uMobile);
+      finalColor += bandColor * band * bandOpacity * topBottomMask;
 
       // 3. BARELY-THERE PARTICLES (Light violet, not Benzi)
       vec2 particleUV = uv * vec2(uResolution.x / uResolution.y, 1.0) * 2.0;
@@ -105,6 +108,7 @@ const ShaderPlane = () => {
       materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
       materialRef.current.uniforms.uScroll.value = window.scrollY;
       materialRef.current.uniforms.uVelocity.value = velocityTracker.current.value;
+      materialRef.current.uniforms.uMobile.value = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches ? 1 : 0;
       materialRef.current.uniforms.uResolution.value.set(state.size.width, state.size.height);
     }
   });

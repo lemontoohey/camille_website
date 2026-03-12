@@ -29,6 +29,12 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Camille Wiseman | Fine Art Gallery',
   description: 'An immersive, cinematic headless e-commerce experience for fine artist Camille Wiseman.',
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover' as const,
   themeColor: '#06000c',
 };
 
@@ -39,7 +45,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable}`}>
-      <body className="bg-void text-parchment font-sans antialiased overflow-x-hidden selection:bg-vermillion selection:text-void">
+      <body className="bg-void text-parchment font-sans antialiased overflow-x-hidden selection:bg-vermillion selection:text-void min-h-screen min-h-[100dvh]">
         
         {/* Cinematic Initial Load Experience */}
         <CinematicLoader />
