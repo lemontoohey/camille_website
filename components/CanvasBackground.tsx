@@ -38,6 +38,7 @@ const ParallaxBandsMaterial = shaderMaterial(
 
     varying vec2 vUv;
 
+    // Helper: Draw a soft vertical band
     float drawBand(float uvX, float xPos, float width, float blur) {
       float dist = abs(uvX - xPos);
       return smoothstep(width + blur, width, dist);
@@ -45,38 +46,50 @@ const ParallaxBandsMaterial = shaderMaterial(
 
     void main() {
       vec2 uv = vUv;
-      float scrollOffset = uScroll * 0.0008;
+      
+      // Time/Scroll variables
+      float slowTime = uScroll * 0.0005;
+      float driftTime = uScroll * 0.002;
 
-      // The Void Base
       vec3 finalColor = uColorBase;
 
-      float mSpeed = 1.8;
-      float gSpeed = 0.6;
-      float mPosAbs = 0.5 + scrollOffset * mSpeed;
-      float gPosAbs = 0.5 + scrollOffset * gSpeed;
-      float posM = fract(mPosAbs);
-      float posG = fract(gPosAbs);
+      // 1. DOMAIN WARPING (The Liquid Effect)
+      // We distort the X coordinate based on the Y coordinate to create a swaying, underwater feel
+      float sway = sin(uv.y * 3.0 - slowTime * 2.0) * 0.05;
+      
+      // 2. THE BASE PATH
+      // The shared trajectory for both colors
+      float basePath = fract(0.5 + sway + slowTime * 0.5);
 
-      // 1. Magenta: Very thin (0.015), soft blur (0.15)
-      float bandMRaw = drawBand(uv.x, posM, 0.015, 0.15);
-      float flash = smoothstep(0.1, 0.9, sin(scrollOffset * 0.4) * 0.5 + 0.5);
-      float bandM = bandMRaw * flash;
+      // 3. THE SPLIT (Fusing and Separating)
+      // A slow oscillator that drives how far apart the colors drift.
+      // When splitFactor is 0, they perfectly overlap into Chromatic Black.
+      float splitFactor = sin(uv.y * 5.0 + driftTime) * 0.04;
 
-      // 2. Green: Slightly wider than Magenta (0.04), soft blur (0.25)
-      float bandG = drawBand(uv.x, posG, 0.04, 0.25);
+      // Calculate individual positions by shifting away from the base path
+      float posM = basePath + splitFactor; // Magenta drifts right/left
+      float posG = basePath - splitFactor; // Green drifts the exact opposite way
 
-      // Higher opacity (0.6) but because they are thin, the void dominates
-      float opacity = 0.6; 
+      // 4. RENDER BANDS
+      // Magenta: Very thin, sharp inner core, soft outer glow
+      float bandM = drawBand(uv.x, posM, 0.01, 0.15);
+      
+      // Green: Slightly wider, envelops the magenta when fused
+      float bandG = drawBand(uv.x, posG, 0.02, 0.25);
+
+      // 5. COLOR MIXING (Additive Blending)
+      float opacity = 0.55; 
       
       finalColor += uColorMagenta * bandM * opacity;
       finalColor += uColorPG7 * bandG * opacity;
 
-      // Subtle violet atmospheric shift
-      float posV = fract(0.8 + scrollOffset * 0.4);
-      float bandV = drawBand(uv.x, posV, 0.1, 0.3);
-      finalColor += uColorViolet * bandV * opacity * 0.6;
+      // 6. ATMOSPHERIC VIOLET (Background depth layer)
+      // Moves much slower, provides environmental depth
+      float posV = fract(0.8 + sway * 0.5 + slowTime * 0.2);
+      float bandV = drawBand(uv.x, posV, 0.15, 0.4);
+      finalColor += uColorViolet * bandV * opacity * 0.7;
 
-      // Subtle Grain
+      // 7. SUBTLE GRAIN
       float grain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
       finalColor += grain * 0.015;
       
