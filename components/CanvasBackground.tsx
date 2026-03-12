@@ -24,7 +24,7 @@ const MagneticShearMaterial = shaderMaterial(
       gl_Position = vec4(position.xy, 0.0, 1.0);
     }
   `,
-  // Fragment Shader
+  // Fragment Shader (Corrected Magnetic Shear Logic)
   `
     precision mediump float;
     uniform float uScroll;
@@ -45,19 +45,24 @@ const MagneticShearMaterial = shaderMaterial(
       float scrollOffset = uScroll * 0.0008;
       vec3 finalColor = uColorBase;
 
-      // 1. Green Band: The prominent, stable leader. Its position is based only on scroll.
+      // 1. Green Band: Prominent and stable leader.
       float posG = fract(0.5 + scrollOffset * 0.6);
-      float bandG = drawBand(uv.x, posG, 0.035, 0.25);
+      // CORRECTED: Much wider base width
+      float bandG = drawBand(uv.x, posG, 0.05, 0.25); 
 
-      // 2. Magenta Band: The reactive follower. Torn away by velocity, fuses when velocity is 0.
-      float velocityOffset = uVelocity * 0.0035; // How much velocity affects the split
+      // 2. Magenta Band: Ephemeral follower.
+      // CORRECTED: Added a 'dead zone' clamp. If abs(uVelocity) is less than 0.1, it's treated as 0.
+      float clampedVelocity = smoothstep(0.1, 8.0, abs(uVelocity)) * uVelocity;
+      float velocityOffset = clampedVelocity * 0.004;
       float posM = posG + velocityOffset;
-      float bandM = drawBand(uv.x, posM, 0.01, 0.15);
+      // CORRECTED: Much thinner width for a subtle effect
+      float bandM = drawBand(uv.x, posM, 0.005, 0.1); 
 
       float opacity = 0.65;
       finalColor += uColorPG7 * bandG * opacity;
       finalColor += uColorMagenta * bandM * opacity;
 
+      // Grain & Final Output
       float grain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
       finalColor += grain * 0.015;
       finalColor = min(finalColor, vec3(1.0));
@@ -72,14 +77,14 @@ const ShaderPlane = () => {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const isCanvasPaused = useUiStore((state) => state.isCanvasPaused);
   const scrollVelocity = useUiStore((state) => state.scrollVelocity);
+
   const velocityTracker = useRef({ value: 0 });
 
   useFrame((state) => {
     if (isCanvasPaused) return;
 
-    // Spring physics: lerp tracker towards real-time velocity. Lower factor = springier return.
-    const lerpFactor = 0.05;
-    velocityTracker.current.value += (scrollVelocity - velocityTracker.current.value) * lerpFactor;
+    // The "spring" that smoothly animates the return to zero
+    velocityTracker.current.value += (scrollVelocity - velocityTracker.current.value) * 0.05;
 
     if (materialRef.current) {
       materialRef.current.uniforms.uScroll.value = window.scrollY;
