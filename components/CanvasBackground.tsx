@@ -18,6 +18,7 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uColorPG7: new THREE.Color('#003038'),
     uColorMagenta: new THREE.Color('#6b0038'),
     uColorGlow: new THREE.Color('#8ab4f8'),
+    uColorViolet: new THREE.Color('#5c3d70'), // Light violet for particles
   },
   `
     varying vec2 vUv;
@@ -37,6 +38,7 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uniform vec3 uColorPG7;
     uniform vec3 uColorMagenta;
     uniform vec3 uColorGlow;
+    uniform vec3 uColorViolet;
     varying vec2 vUv;
 
     float drawBand(float uvX, float xPos, float width, float blur) {
@@ -72,11 +74,11 @@ const ArchivalCanvasMaterial = shaderMaterial(
       float bandOpacity = 0.02 + (scrollLight * 0.06); 
       finalColor += bandColor * band * bandOpacity;
 
-      // 3. BARELY-THERE PARTICLES
+      // 3. BARELY-THERE PARTICLES (Light violet, not Benzi)
       vec2 particleUV = uv * vec2(uResolution.x / uResolution.y, 1.0) * 2.0;
-      float noiseMag = random(particleUV - (uTime * 0.04));
-      float dustMag = pow(noiseMag, 90.0);
-      finalColor += uColorMagenta * dustMag * 0.15; 
+      float noiseV = random(particleUV - (uTime * 0.04));
+      float dustV = pow(noiseV, 90.0);
+      finalColor += uColorViolet * dustV * 0.15; 
 
       float screenGrain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
       finalColor += screenGrain * 0.008;
