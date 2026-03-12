@@ -109,6 +109,8 @@ PureArtworkCard.displayName = 'PureArtworkCard';
 export const Gallery = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const setCanvasPaused = useUiStore((state) => state.setCanvasPaused);
+  const scrollVelocity = useUiStore((state) => state.scrollVelocity);
+  const isScrolling = Math.abs(scrollVelocity) > 2;
 
   useGSAP(
     () => {
@@ -125,6 +127,7 @@ export const Gallery = () => {
       const cards = gsap.utils.toArray<HTMLElement>('.artwork-card');
 
       cards.forEach((card) => {
+        const container = card.querySelector('.card-container');
         const benziSolid = card.querySelector('.benzi-solid');
         const benziOverlay = card.querySelector('.benzi-overlay');
         const img = card.querySelector('.artwork-image');
@@ -143,6 +146,19 @@ export const Gallery = () => {
         tl.to([benziSolid, benziOverlay], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
         tl.to(img, { scale: 1, ease: 'power2.out', duration: 1 }, 0);
         tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.8 }, 0.2);
+
+        // Add interactive hover states for the artwork (Movement + Glow Expansion)
+        if (container && img) {
+          card.addEventListener('mouseenter', () => {
+            gsap.to(container, { boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 50px 8px rgba(150,40,20,0.5)', duration: 0.8, ease: 'power2.out' });
+            gsap.to(img, { scale: 1.03, duration: 1.2, ease: 'power2.out' });
+          });
+
+          card.addEventListener('mouseleave', () => {
+            gsap.to(container, { boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 20px 2px rgba(150,40,20,0.15)', duration: 0.8, ease: 'power2.out' });
+            gsap.to(img, { scale: 1, duration: 1.2, ease: 'power2.out' });
+          });
+        }
       });
     },
     { scope: containerRef }
@@ -150,13 +166,13 @@ export const Gallery = () => {
 
   return (
     <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-32 z-10 flex flex-col items-center">
-      <header className="fixed top-1/3 left-4 md:left-8 z-50 pointer-events-none hidden md:block">
+      <header className={`fixed top-1/3 left-4 md:left-8 z-50 transition-opacity duration-700 hidden md:block ${isScrolling ? 'opacity-0' : 'opacity-100 pointer-events-none'}`}>
         <h1 className="font-sans text-[10px] text-parchment tracking-[0.5em] uppercase opacity-40 [writing-mode:vertical-rl] rotate-180">
           Selected Works
         </h1>
       </header>
 
-      <header className="md:hidden w-full text-left mb-16 px-2">
+      <header className={`md:hidden w-full text-left mb-16 px-2 transition-opacity duration-700 ${isScrolling ? 'opacity-0' : 'opacity-100'}`}>
         <h1 className="font-sans text-[10px] text-parchment tracking-[0.5em] uppercase opacity-40">
           Selected Works
         </h1>

@@ -29,6 +29,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Camille Wiseman | Fine Art Gallery',
   description: 'An immersive, cinematic headless e-commerce experience for fine artist Camille Wiseman.',
+  themeColor: '#06000c',
 };
 
 export default function RootLayout({

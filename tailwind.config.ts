@@ -11,8 +11,8 @@ const config: Config = {
     extend: {
       colors: {
         // Luxury Digital Gallery Tokens
-        void: '#0a0010',        // Deepest background - Masstone Dioxazine Violet
-        'diox-rich': '#160024', // Saturated Dioxazine for Shop contrast
+        void: '#06000c',
+        'diox-rich': '#06000c',
         magenta: '#E40078',     // WebGL layer 1 - Primary Quinacridone Magenta
         pg7: '#005F56',         // WebGL layer 2 - Phthalo Green
         parchment: '#FDF5E6',   // All typography - Warm parchment

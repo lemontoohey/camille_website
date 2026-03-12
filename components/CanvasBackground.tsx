@@ -13,7 +13,7 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uScroll: 0,
     uVelocity: 0,
     uResolution: new THREE.Vector2(),
-    uColorBase: new THREE.Color('#030008'),
+    uColorBase: new THREE.Color('#06000c'),
     uColorPaper: new THREE.Color('#0c0614'),
     uColorPG7: new THREE.Color('#003038'),
     uColorMagenta: new THREE.Color('#6b0038'),
@@ -71,7 +71,7 @@ const ArchivalCanvasMaterial = shaderMaterial(
 
       vec3 bandColor = mix(chromaticGrey, uColorGlow, scrollLight * 0.6);
       
-      float bandOpacity = 0.02 + (scrollLight * 0.06); 
+      float bandOpacity = 0.04 + (scrollLight * 0.12); 
       finalColor += bandColor * band * bandOpacity;
 
       // 3. BARELY-THERE PARTICLES (Light violet, not Benzi)

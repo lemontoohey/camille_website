@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --color-void: #0a0010;
-  --color-diox-rich: #160024;
+  --color-void: #06000c;
+  --color-diox-rich: #06000c;
   --color-magenta: #E40078;
   --color-pg7: #005F56;
   --color-parchment: #FDF5E6;
@@ -15,9 +15,14 @@
 }
 
 body {
-  background-color: var(--color-diox-rich);
+  background-color: var(--color-void);
   color: var(--color-parchment);
   overflow-x: hidden;
+  overscroll-behavior: none;
+}
+html {
+  overscroll-behavior: none;
+  background-color: var(--color-void);
 }
 
 /* Base style for the light-crack reveal */
