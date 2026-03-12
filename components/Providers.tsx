@@ -4,15 +4,13 @@ import { ReactNode, useEffect, useRef } from 'react';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useUiStore } from '@/store/useUiStore';
 
 export const Providers = ({ children }: { children: ReactNode }) => {
   const lenisRef = useRef<Lenis | null>(null);
+  const setScrollVelocity = useUiStore((state) => state.setScrollVelocity);
 
   useEffect(() => {
-    // Register GSAP plugins inside useEffect to prevent SSR build errors
-    gsap.registerPlugin(ScrollTrigger);
-
-    // 1. Initialize Lenis for frictionless scroll (Optimized for performance)
     const lenis = new Lenis({
       lerp: 0.1,
       duration: 1.2,
@@ -25,8 +23,9 @@ export const Providers = ({ children }: { children: ReactNode }) => {
     lenisRef.current = lenis;
 
     // Sync Lenis with GSAP ScrollTrigger
-    lenis.on('scroll', (e: any) => {
+    lenis.on('scroll', () => {
       ScrollTrigger.update();
+      setScrollVelocity(lenis.velocity);
     });
 
     // Frame update loop - Cleaner GSAP ticker implementation

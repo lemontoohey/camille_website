@@ -12,6 +12,9 @@ interface UiState {
   // Transition state
   isTransitioning: boolean;
   setIsTransitioning: (transitioning: boolean) => void;
+  // Scroll velocity for Magnetic Shear shader
+  scrollVelocity: number;
+  setScrollVelocity: (velocity: number) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -23,4 +26,6 @@ export const useUiStore = create<UiState>((set) => ({
   setHasLoaded: (loaded) => set({ hasLoaded: loaded }),
   isTransitioning: false,
   setIsTransitioning: (transitioning) => set({ isTransitioning: transitioning }),
+  scrollVelocity: 0,
+  setScrollVelocity: (velocity) => set({ scrollVelocity: velocity }),
 }));
