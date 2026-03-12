@@ -13,10 +13,10 @@ const MagneticShearMaterial = shaderMaterial(
     uScroll: 0,
     uVelocity: 0,
     uResolution: new THREE.Vector2(),
-    uColorBase: new THREE.Color('#0a0010'), // Dioxazine Void
-    uColorMagenta: new THREE.Color('#8a0060'), // Cool Magenta
-    uColorPG7: new THREE.Color('#004a50'),     // Cool Green/Teal
-    uColorDust: new THREE.Color('#2d0040'),  // Lighter Violet for Particles
+    uColorBase: new THREE.Color('#0a0010'),
+    uColorMagenta: new THREE.Color('#8a0060'),
+    uColorPG7: new THREE.Color('#004a50'),
+    uColorDust: new THREE.Color('#2d0040'),
   },
   // Vertex Shader
   `
@@ -26,7 +26,7 @@ const MagneticShearMaterial = shaderMaterial(
       gl_Position = vec4(position.xy, 0.0, 1.0);
     }
   `,
-  // Fragment Shader (Final Refined Logic)
+  // Fragment Shader (Final Refined "Hierarchical Shear" Logic)
   `
     precision mediump float;
     uniform float uTime;
@@ -44,7 +44,6 @@ const MagneticShearMaterial = shaderMaterial(
       return smoothstep(width + blur, width, dist);
     }
 
-    // Classic 2D noise function
     float random(vec2 st) {
         return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
     }
@@ -54,31 +53,31 @@ const MagneticShearMaterial = shaderMaterial(
       float scrollOffset = uScroll * 0.0008;
       vec3 finalColor = uColorBase;
 
-      // 1. PARTICLE FILM LAYER
+      // 1. Particle Film Layer (as before)
       float slowTime = uTime * 0.03;
       vec2 particleUV = uv * vec2(uResolution.x / uResolution.y, 1.0) * 2.0;
-      float noise = random(particleUV + slowTime);
-      // Use pow() to isolate only the brightest specks of noise into "dust"
-      float dust = pow(noise, 60.0); 
-      finalColor += uColorDust * dust * 0.5; // Add particles underneath the bands
+      float noise = random(particleUV + vec2(slowTime, slowTime * 0.3));
+      float dust = pow(noise, 60.0);
+      finalColor += uColorDust * dust * 0.5;
 
-      // 2. MAGNETIC SHEAR LOGIC
-      // Green Band: The prominent, stable leader.
+      // 2. HIERARCHICAL SHEAR LOGIC
+      // Green Band: The stable "shell." Its position is the baseline.
       float posG = fract(0.5 + scrollOffset * 0.6);
-      // Increased width for prominence
-      float bandG = drawBand(uv.x, posG, 0.045, 0.3); 
+      // Width: 0.02 core, 0.1 blur. This is the fuzzy green aura.
+      float bandG = drawBand(uv.x, posG, 0.02, 0.1); 
 
-      // Magenta Band: Ephemeral follower.
-      // Forced Fusion: Clamp velocity to 0 if it's very low, ensuring a perfect fuse at rest.
-      float clampedVelocity = smoothstep(0.1, 10.0, abs(uVelocity)) * uVelocity;
-      float velocityOffset = clampedVelocity * 0.005; // Slightly stronger effect
-      float posM = posG + velocityOffset;
-      // Made razor-thin to be a subtle "tear"
-      float bandM = drawBand(uv.x, posM, 0.008, 0.1); 
+      // Magenta Band: The hidden "core."
+      // It is pulled out from under the Green by velocity.
+      float clampedVelocity = smoothstep(0.1, 8.0, abs(uVelocity)) * uVelocity;
+      float velocityOffset = clampedVelocity * 0.005; // How far it's pulled
+      float posM = posG - velocityOffset; // Move in the opposite direction of scroll
+      // Width: 0.015 core, 0.05 blur. Sharper and contained within the Green.
+      float bandM = drawBand(uv.x, posM, 0.015, 0.05); 
 
-      float opacity = 0.6;
-      finalColor += uColorPG7 * bandG * opacity;
-      finalColor += uColorMagenta * bandM * opacity;
+      // 3. Color Mixing
+      // We use mix() and then add() for a more controlled "chromatic grey."
+      vec3 bandColor = mix(uColorPG7, uColorMagenta, bandM);
+      finalColor += bandColor * bandG; // The Green acts as a mask for the fused color
 
       // Grain & Final Output
       float grain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
@@ -100,9 +99,8 @@ const ShaderPlane = () => {
   useFrame((state) => {
     if (isCanvasPaused) return;
 
-    // Spring physics: lerp tracker towards real-time velocity.
-    const lerpFactor = 0.05;
-    velocityTracker.current.value += (scrollVelocity - velocityTracker.current.value) * lerpFactor;
+    // Spring: slightly more responsive (0.08)
+    velocityTracker.current.value += (scrollVelocity - velocityTracker.current.value) * 0.08;
 
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
