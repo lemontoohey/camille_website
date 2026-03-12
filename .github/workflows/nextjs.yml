@@ -44,6 +44,8 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+      - name: Verify build output
+        run: test -d ./out && echo "Build output verified" || (echo "Missing ./out" && exit 1)
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:
