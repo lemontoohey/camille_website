@@ -105,10 +105,10 @@ export function ShopArtworkCard({ artwork }: { artwork: Artwork; index: number }
           className="absolute inset-0 z-[5] transition-shadow duration-500"
           style={{
             boxShadow: isClosing
-              ? '0 50px 100px -20px rgba(0,0,0,1), 0 0 80px rgba(150,40,20,0.6)'
+              ? '30px 40px 80px -10px rgba(75,10,40,0.9), 15px 20px 40px 5px rgba(150,40,20,0.6)'
               : isHovered
-                ? '0 40px 80px -15px rgba(0,0,0,0.9), 0 0 45px rgba(150,40,20,0.45)'
-                : '0 25px 50px -10px rgba(0,0,0,0.7), 0 0 15px rgba(150,40,20,0.15)',
+                ? '20px 25px 50px -10px rgba(75,10,40,0.8), 10px 15px 30px rgba(150,40,20,0.45)'
+                : '10px 15px 30px -5px rgba(75,10,40,0.6), 5px 10px 15px rgba(150,40,20,0.2)',
           }}
           initial={{ clipPath: 'inset(50% 50% 50% 50%)' }}
           whileInView={{ clipPath: 'inset(0% 0% 0% 0%)' }}
@@ -119,7 +119,7 @@ export function ShopArtworkCard({ artwork }: { artwork: Artwork; index: number }
               ? {
                   clipPath: 'inset(50% 50% 50% 50%)',
                   scale: 0.95,
-                  boxShadow: '0 50px 100px -20px rgba(0,0,0,1), 0 0 80px rgba(150,40,20,0.6)',
+                  boxShadow: '30px 40px 80px -10px rgba(75,10,40,0.9), 15px 20px 40px 5px rgba(150,40,20,0.6)',
                   transition: {
                     clipPath: { duration: 0.3, ease: 'easeIn' },
                     scale: { duration: 0.2 },
