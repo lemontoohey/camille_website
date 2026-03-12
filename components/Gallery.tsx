@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { memo, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import gsap from 'gsap';
@@ -22,7 +22,7 @@ interface Artwork {
   medium: string;
 }
 
-const PureArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }) => {
+const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: number }) => {
   const cardRef = useRef<HTMLElement>(null);
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
 
@@ -100,7 +100,9 @@ const PureArtworkCard = ({ artwork, index }: { artwork: Artwork; index: number }
       </div>
     </article>
   );
-};
+});
+
+PureArtworkCard.displayName = 'PureArtworkCard';
 
 export const Gallery = () => {
   const containerRef = useRef<HTMLDivElement>(null);

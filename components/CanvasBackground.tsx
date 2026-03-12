@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { memo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { shaderMaterial } from '@react-three/drei';
 import * as THREE from 'three';
@@ -9,12 +9,14 @@ import { useUiStore } from '@/store/useUiStore';
 
 const MagneticShearMaterial = shaderMaterial(
   {
+    uTime: 0,
     uScroll: 0,
     uVelocity: 0,
     uResolution: new THREE.Vector2(),
-    uColorBase: new THREE.Color('#0a0010'),
-    uColorMagenta: new THREE.Color('#8a0060'),
-    uColorPG7: new THREE.Color('#004a50'),
+    uColorBase: new THREE.Color('#0a0010'), // Dioxazine Void
+    uColorMagenta: new THREE.Color('#8a0060'), // Cool Magenta
+    uColorPG7: new THREE.Color('#004a50'),     // Cool Green/Teal
+    uColorDust: new THREE.Color('#2d0040'),  // Lighter Violet for Particles
   },
   // Vertex Shader
   `
@@ -24,15 +26,17 @@ const MagneticShearMaterial = shaderMaterial(
       gl_Position = vec4(position.xy, 0.0, 1.0);
     }
   `,
-  // Fragment Shader (Corrected Magnetic Shear Logic)
+  // Fragment Shader (Final Refined Logic)
   `
     precision mediump float;
+    uniform float uTime;
     uniform float uScroll;
     uniform float uVelocity;
     uniform vec2 uResolution;
     uniform vec3 uColorBase;
     uniform vec3 uColorMagenta;
     uniform vec3 uColorPG7;
+    uniform vec3 uColorDust;
     varying vec2 vUv;
 
     float drawBand(float uvX, float xPos, float width, float blur) {
@@ -40,25 +44,39 @@ const MagneticShearMaterial = shaderMaterial(
       return smoothstep(width + blur, width, dist);
     }
 
+    // Classic 2D noise function
+    float random(vec2 st) {
+        return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+    }
+
     void main() {
       vec2 uv = vUv;
       float scrollOffset = uScroll * 0.0008;
       vec3 finalColor = uColorBase;
 
-      // 1. Green Band: Prominent and stable leader.
+      // 1. PARTICLE FILM LAYER
+      float slowTime = uTime * 0.03;
+      vec2 particleUV = uv * vec2(uResolution.x / uResolution.y, 1.0) * 2.0;
+      float noise = random(particleUV + slowTime);
+      // Use pow() to isolate only the brightest specks of noise into "dust"
+      float dust = pow(noise, 60.0); 
+      finalColor += uColorDust * dust * 0.5; // Add particles underneath the bands
+
+      // 2. MAGNETIC SHEAR LOGIC
+      // Green Band: The prominent, stable leader.
       float posG = fract(0.5 + scrollOffset * 0.6);
-      // CORRECTED: Much wider base width
-      float bandG = drawBand(uv.x, posG, 0.05, 0.25); 
+      // Increased width for prominence
+      float bandG = drawBand(uv.x, posG, 0.045, 0.3); 
 
-      // 2. Magenta Band: Ephemeral follower.
-      // CORRECTED: Added a 'dead zone' clamp. If abs(uVelocity) is less than 0.1, it's treated as 0.
-      float clampedVelocity = smoothstep(0.1, 8.0, abs(uVelocity)) * uVelocity;
-      float velocityOffset = clampedVelocity * 0.004;
+      // Magenta Band: Ephemeral follower.
+      // Forced Fusion: Clamp velocity to 0 if it's very low, ensuring a perfect fuse at rest.
+      float clampedVelocity = smoothstep(0.1, 10.0, abs(uVelocity)) * uVelocity;
+      float velocityOffset = clampedVelocity * 0.005; // Slightly stronger effect
       float posM = posG + velocityOffset;
-      // CORRECTED: Much thinner width for a subtle effect
-      float bandM = drawBand(uv.x, posM, 0.005, 0.1); 
+      // Made razor-thin to be a subtle "tear"
+      float bandM = drawBand(uv.x, posM, 0.008, 0.1); 
 
-      float opacity = 0.65;
+      float opacity = 0.6;
       finalColor += uColorPG7 * bandG * opacity;
       finalColor += uColorMagenta * bandM * opacity;
 
@@ -77,16 +95,17 @@ const ShaderPlane = () => {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const isCanvasPaused = useUiStore((state) => state.isCanvasPaused);
   const scrollVelocity = useUiStore((state) => state.scrollVelocity);
-
   const velocityTracker = useRef({ value: 0 });
 
   useFrame((state) => {
     if (isCanvasPaused) return;
 
-    // The "spring" that smoothly animates the return to zero
-    velocityTracker.current.value += (scrollVelocity - velocityTracker.current.value) * 0.05;
+    // Spring physics: lerp tracker towards real-time velocity.
+    const lerpFactor = 0.05;
+    velocityTracker.current.value += (scrollVelocity - velocityTracker.current.value) * lerpFactor;
 
     if (materialRef.current) {
+      materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
       materialRef.current.uniforms.uScroll.value = window.scrollY;
       materialRef.current.uniforms.uVelocity.value = velocityTracker.current.value;
       materialRef.current.uniforms.uResolution.value.set(
@@ -105,7 +124,7 @@ const ShaderPlane = () => {
   );
 };
 
-export const CanvasBackground = () => {
+const CanvasBackgroundComponent = () => {
   return (
     <div className="fixed inset-0 pointer-events-none bg-void" style={{ zIndex: 0 }}>
       <Canvas
@@ -119,3 +138,5 @@ export const CanvasBackground = () => {
     </div>
   );
 };
+
+export const CanvasBackground = memo(CanvasBackgroundComponent);
