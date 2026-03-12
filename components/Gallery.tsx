@@ -56,7 +56,7 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
       >
         <div
           className="card-container relative w-full aspect-[4/5] bg-void"
-          style={{ boxShadow: '0 30px 60px -15px rgba(0,0,0,0.8)' }}
+          style={{ boxShadow: '0 25px 50px -15px rgba(0,0,0,0.8), 0 0 0px rgba(150,40,20,0)' }}
         >
           <div className="image-wrapper absolute inset-0 overflow-hidden will-change-transform">
             <Image
@@ -140,7 +140,7 @@ export const Gallery = () => {
 
         // 1. The Alchemy: Brown dissolves to real image, transfers glow to outside perimeter
         tl.to([benziSolid, benziOverlay], { opacity: 0, ease: 'power2.inOut', duration: 50 }, 0);
-        tl.to(container, { boxShadow: '0 50px 100px -20px rgba(0,0,0,1)', ease: 'power2.inOut', duration: 50 }, 0);
+        tl.to(container, { boxShadow: '0 50px 100px -20px rgba(0,0,0,1), 0 0 50px 5px rgba(150,40,20,0.45)', ease: 'power2.inOut', duration: 50 }, 0);
 
         // 2. Image Settles & Metadata Appears
         tl.to(img, { scale: 1, ease: 'power2.out', duration: 40 }, 20);

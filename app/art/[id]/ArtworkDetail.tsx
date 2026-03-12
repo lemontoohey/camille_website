@@ -42,7 +42,8 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
 
       <motion.div 
         layoutId={`artwork-container-${artwork.id}`}
-        className="relative w-full aspect-[4/5] md:aspect-auto md:h-[80vh] bg-void/50 shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] overflow-hidden mt-8 md:mt-0"
+        className="relative w-full aspect-[4/5] md:aspect-auto md:h-[80vh] bg-void/50 overflow-hidden mt-8 md:mt-0"
+        style={{ boxShadow: '0 50px 100px -20px rgba(0,0,0,1), 0 0 60px 5px rgba(150,40,20,0.35)' }}
       >
         <motion.div 
           layoutId={`artwork-image-${artwork.id}`} 
