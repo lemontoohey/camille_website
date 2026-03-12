@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUiStore } from '@/store/useUiStore';
 
-const SMALT_COLOR = 'rgba(64, 96, 96, 1)';
-
 export const PageTransition = () => {
   const isTransitioning = useUiStore((state) => state.isTransitioning);
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
@@ -19,8 +17,7 @@ export const PageTransition = () => {
 
   return (
     <motion.div
-      className="fixed inset-0 z-[1000] pointer-events-none"
-      style={{ backgroundColor: SMALT_COLOR }}
+      className="fixed inset-0 z-[1000] pointer-events-none page-transition-overlay"
       initial={{ opacity: 0 }}
       animate={{
         opacity: phase === 'flash' ? 0.3 : phase === 'dissolve' ? 0 : 0,

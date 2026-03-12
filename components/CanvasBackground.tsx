@@ -101,6 +101,10 @@ const ShaderPlane = () => {
   const velocityTracker = useRef({ value: 0 });
 
   useFrame((state) => {
+    // Always update uMobile (even when paused) so green stays masked on mobile after nav
+    if (materialRef.current) {
+      materialRef.current.uniforms.uMobile.value = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches ? 1 : 0;
+    }
     if (isCanvasPaused) return;
     velocityTracker.current.value += (scrollVelocity - velocityTracker.current.value) * 0.05;
 
@@ -108,7 +112,6 @@ const ShaderPlane = () => {
       materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
       materialRef.current.uniforms.uScroll.value = window.scrollY;
       materialRef.current.uniforms.uVelocity.value = velocityTracker.current.value;
-      materialRef.current.uniforms.uMobile.value = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches ? 1 : 0;
       materialRef.current.uniforms.uResolution.value.set(state.size.width, state.size.height);
     }
   });

@@ -25,6 +25,16 @@ html {
   background-color: var(--color-void);
 }
 
+/* Page transition overlay: void on mobile (no green flash), smalt on desktop */
+.page-transition-overlay {
+  background-color: var(--color-void);
+}
+@media (min-width: 769px) {
+  .page-transition-overlay {
+    background-color: rgba(64, 96, 96, 1);
+  }
+}
+
 /* Base style for the light-crack reveal */
 .image-crack-wrapper {
   clip-path: inset(0 100% 0 0);
