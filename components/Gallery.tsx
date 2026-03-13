@@ -70,9 +70,9 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
               priority={index < 2}
             />
             
-            {/* 1. Benzi Brown 25 Masstone (Color & Solid): Stronger, browner, heavily obscuring but slightly transparent — 80% at start */}
-            <div className="benzi-color absolute inset-0 bg-[#592512] mix-blend-color opacity-80 z-10 pointer-events-none will-change-opacity" />
-            <div className="benzi-solid absolute inset-0 bg-[#3a1707] opacity-80 z-10 pointer-events-none will-change-opacity" />
+            {/* 1. Benzi Brown 25 Masstone (Color & Solid): Heavy earthy overlay, painting barely discernible — 82% at start */}
+            <div className="benzi-color absolute inset-0 bg-[#592512] mix-blend-color opacity-[0.82] z-10 pointer-events-none will-change-opacity" />
+            <div className="benzi-solid absolute inset-0 bg-[#3a1707] opacity-[0.82] z-10 pointer-events-none will-change-opacity" />
             
             {/* 2. Magenta Core Light: Starts invisible, flares & extends on scroll, then fades to 0 */}
             <div className="magenta-light absolute inset-0 bg-magenta mix-blend-screen opacity-0 blur-[60px] scale-90 z-20 pointer-events-none will-change-transform" />
@@ -201,7 +201,7 @@ export const Gallery = () => {
   );
 
   return (
-    <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-32 z-10 flex flex-col items-center">
+    <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))] sm:px-12 py-32 z-10 flex flex-col items-center">
       <header
         className={`fixed top-1/3 left-4 md:left-8 z-50 transition-opacity duration-700 hidden md:block ${isScrolling ? 'opacity-0' : 'opacity-100 pointer-events-none'}`}
       >
