@@ -70,13 +70,14 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
               priority={index < 2}
             />
             
-            {/* Base tint: Gives the raw painting an 'underpainting' warmth but keeps the art completely visible when static */}
-            <div className="benzi-tint absolute inset-0 bg-benzi mix-blend-color opacity-60 z-10 pointer-events-none will-change-opacity" />
+            {/* 1. Benzi Brown 25 Masstone (Color & Solid): Stronger, browner, heavily obscuring but slightly transparent — 80% at start */}
+            <div className="benzi-color absolute inset-0 bg-[#592512] mix-blend-color opacity-80 z-10 pointer-events-none will-change-opacity" />
+            <div className="benzi-solid absolute inset-0 bg-[#3a1707] opacity-80 z-10 pointer-events-none will-change-opacity" />
             
-            {/* Magenta Core Light: Starts invisible, flares & extends on scroll, then fades to 0 */}
+            {/* 2. Magenta Core Light: Starts invisible, flares & extends on scroll, then fades to 0 */}
             <div className="magenta-light absolute inset-0 bg-magenta mix-blend-screen opacity-0 blur-[60px] scale-90 z-20 pointer-events-none will-change-transform" />
             
-            {/* Brownish Blur Light: Starts invisible, flares warm & extends on scroll, then fades to 0 */}
+            {/* 3. Brownish Blur Light: Starts invisible, flares warm & extends on scroll, then fades to 0 */}
             <div className="brown-light absolute inset-0 bg-[#c85a42] mix-blend-screen opacity-0 blur-[80px] scale-90 z-20 pointer-events-none will-change-transform" />
           </div>
         </div>
@@ -134,13 +135,13 @@ export const Gallery = () => {
 
       cards.forEach((card) => {
         const container = card.querySelector('.card-container');
-        const benziTint = card.querySelector('.benzi-tint');
+        const benziColor = card.querySelector('.benzi-color');
+        const benziSolid = card.querySelector('.benzi-solid');
         const magentaLight = card.querySelector('.magenta-light');
         const brownLight = card.querySelector('.brown-light');
         const img = card.querySelector<HTMLElement>('.artwork-image');
         const meta = card.querySelector('.meta-block');
 
-        // Robust null checks so NextJS hot-reloading doesn't choke GSAP
         if (!img || !meta) return;
 
         const tl = gsap.timeline({
@@ -162,9 +163,9 @@ export const Gallery = () => {
             .to(brownLight, { opacity: 0, scale: 1.4, duration: 0.7, ease: 'power2.out' }, 0.3);
         }
 
-        // 2. The Original Dissolve: The overall benzi tint smoothy fades to 0
-        if (benziTint) {
-          tl.to(benziTint, { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
+        // 2. The Heavy Dissolve: The browner Benzi 25 masstone fades completely out to reveal the raw painting
+        if (benziColor && benziSolid) {
+          tl.to([benziColor, benziSolid], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
         }
 
         // 3. The Original Settle: Image drops back from scale 1.1 down to 1
