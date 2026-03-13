@@ -153,14 +153,15 @@ export const Gallery = () => {
           },
         });
 
-        // 1. The Scroll Lights: Flare up (0 -> 0.3 progress) and expand, then fade out entirely (0.3 -> 1.0)
+        // 1. Magenta glow: Barely visible flash (low contrast)
         if (magentaLight) {
-          tl.to(magentaLight, { opacity: 0.35, scale: 1.1, duration: 0.3, ease: 'power1.inOut' }, 0)
-            .to(magentaLight, { opacity: 0, scale: 1.3, duration: 0.7, ease: 'power2.out' }, 0.3);
+          tl.to(magentaLight, { opacity: 0.08, scale: 1.05, duration: 0.3, ease: 'power1.inOut' }, 0)
+            .to(magentaLight, { opacity: 0, scale: 1.15, duration: 0.7, ease: 'power2.out' }, 0.3);
         }
+        // 2. Brown light: Slow, lazy, organic — runs almost at benzi overlay speed (full duration)
         if (brownLight) {
-          tl.to(brownLight, { opacity: 0.5, scale: 1.1, duration: 0.3, ease: 'power1.inOut' }, 0)
-            .to(brownLight, { opacity: 0, scale: 1.4, duration: 0.7, ease: 'power2.out' }, 0.3);
+          tl.to(brownLight, { opacity: 0.3, scale: 1.02, duration: 0.5, ease: 'power2.inOut' }, 0)
+            .to(brownLight, { opacity: 0, scale: 1.03, duration: 0.5, ease: 'power2.inOut' }, 0.5);
         }
 
         // 2. The Heavy Dissolve: The browner Benzi 25 masstone fades completely out to reveal the raw painting
