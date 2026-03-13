@@ -19,7 +19,7 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uColorPG7: new THREE.Color('#003038'),
     uColorMagenta: new THREE.Color('#6b0038'),
     uColorGlow: new THREE.Color('#8b5cf6'),
-    uColorViolet: new THREE.Color('#5c3d70'), // Light violet for particles
+    uColorViolet: new THREE.Color('#5c3d70'),
   },
   `
     varying vec2 vUv;
@@ -54,7 +54,9 @@ const ArchivalCanvasMaterial = shaderMaterial(
 
     void main() {
       vec2 uv = vUv;
-      float scrollOffset = uScroll * 0.0008;
+      
+      // Increase scroll scaling for parallax feel
+      float scrollOffset = uScroll * 0.0015;
 
       // 1. ULTRA-SUBTLE PAPER TOOTH
       vec2 toothUV = uv * (uResolution.x / uResolution.y) * 600.0;
@@ -62,8 +64,8 @@ const ArchivalCanvasMaterial = shaderMaterial(
       float toothPattern = smoothstep(0.45, 0.55, grainBase);
       vec3 finalColor = mix(uColorBase, uColorPaper, toothPattern * 0.15);
 
-      // 2. CHROMATIC GREY BAND & PALE BLUE FRICTION LIGHT
-      float posB = fract(0.5 + scrollOffset * 0.6);
+      // 2. CHROMATIC GREY BAND & PALE VIOLET FRICTION LIGHT
+      float posB = fract(0.5 + scrollOffset * 0.4);
       float band = drawBand(uv.x, posB, 0.015, 0.15); 
       
       vec3 chromaticGrey = mix(uColorPG7, uColorMagenta, 0.5); 
@@ -77,12 +79,31 @@ const ArchivalCanvasMaterial = shaderMaterial(
       float topBottomMask = mix(1.0, barCenterMask, uMobile);
       finalColor += bandColor * band * bandOpacity * topBottomMask;
 
-      // 3. BARELY-THERE PARTICLES (Light violet, not Benzi)
-      vec2 particleUV = uv * vec2(uResolution.x / uResolution.y, 1.0) * 2.0;
-      float noiseV = random(particleUV - (uTime * 0.04));
-      float dustV = pow(noiseV, 90.0);
-      finalColor += uColorViolet * dustV * 0.15; 
+      // 3. THREE-TIER PARALLAX PARTICLES (Maximum Depth)
+      
+      // Layer 1: Far background (Slow, tiny, muted violet)
+      vec2 pUv1 = uv * vec2(uResolution.x / uResolution.y, 1.0) * 3.5;
+      vec2 offset1 = vec2(uTime * 0.01, uTime * 0.02 + scrollOffset * 0.2);
+      float n1 = random(pUv1 - offset1);
+      float d1 = pow(n1, 100.0);
+      finalColor += (uColorViolet * 0.3) * d1 * 0.1;
 
+      // Layer 2: Midground (Medium, medium speed, true violet)
+      vec2 pUv2 = uv * vec2(uResolution.x / uResolution.y, 1.0) * 2.0;
+      vec2 offset2 = vec2(uTime * 0.02, uTime * 0.04 + scrollOffset * 0.6);
+      float n2 = random(pUv2 - offset2);
+      float d2 = pow(n2, 80.0);
+      finalColor += uColorViolet * d2 * 0.15;
+
+      // Layer 3: Foreground (Fast, large) — felt not seen: very subtle violet/magenta, no brightness
+      vec2 pUv3 = uv * vec2(uResolution.x / uResolution.y, 1.0) * 1.0;
+      vec2 offset3 = vec2(uTime * 0.03, uTime * 0.06 + scrollOffset * 1.2);
+      float n3 = random(pUv3 - offset3);
+      float d3 = pow(n3, 60.0);
+      vec3 frontColor = mix(uColorViolet, uColorMagenta, 0.3);
+      finalColor += frontColor * d3 * 0.06;
+
+      // Finishing Screen Grain
       float screenGrain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
       finalColor += screenGrain * 0.008;
 
@@ -101,11 +122,11 @@ const ShaderPlane = () => {
   const velocityTracker = useRef({ value: 0 });
 
   useFrame((state) => {
-    // Always update uMobile (even when paused) so green stays masked on mobile after nav
     if (materialRef.current) {
       materialRef.current.uniforms.uMobile.value = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches ? 1 : 0;
     }
     if (isCanvasPaused) return;
+    
     velocityTracker.current.value += (scrollVelocity - velocityTracker.current.value) * 0.05;
 
     if (materialRef.current) {

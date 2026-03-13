@@ -22,6 +22,9 @@ interface Artwork {
   medium: string;
 }
 
+/* Soft edge mask: fades bottom 25% so layers blend during stagger (no hard lines) */
+const REVEAL_EDGE_MASK = 'linear-gradient(to bottom, black 75%, transparent 100%)';
+
 const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: number }) => {
   const cardRef = useRef<HTMLElement>(null);
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
@@ -56,8 +59,8 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
       >
         <div
           className="card-container relative w-full aspect-[4/5] bg-void"
-          style={{ 
-            boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 20px 2px rgba(150,40,20,0.15)' 
+          style={{
+            boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 20px 2px rgba(150,40,20,0.15)',
           }}
         >
           <div className="image-wrapper absolute inset-0 overflow-hidden will-change-transform">
@@ -69,9 +72,54 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
               sizes="(max-width: 768px) 100vw, 70vw"
               priority={index < 2}
             />
-            {/* The Hot Underpainting - Dissolves on scroll */}
-            <div className="benzi-overlay absolute inset-0 bg-benzi mix-blend-color opacity-100 z-10 pointer-events-none will-change-opacity" />
-            <div className="benzi-solid absolute inset-0 bg-benzi opacity-90 z-10 pointer-events-none will-change-opacity" />
+
+            {/* 1. Base Glow (The Warm Pink/Brown Hum) */}
+            <div
+              className="reveal-glow absolute inset-0 z-10 pointer-events-none will-change-opacity blur-2xl"
+              style={{
+                background: '#c85a42',
+                mixBlendMode: 'screen',
+                opacity: 0,
+              }}
+            />
+
+            {/* 2. Earth Brown Underlayer — soft edge for depth */}
+            <div
+              className="reveal-earth absolute inset-0 z-20 pointer-events-none will-change-transform origin-top"
+              style={{
+                background: '#3e1f0e',
+                opacity: 0.9,
+                WebkitMaskImage: REVEAL_EDGE_MASK,
+                maskImage: REVEAL_EDGE_MASK,
+                WebkitMaskSize: '100% 100%',
+                maskSize: '100% 100%',
+              }}
+            />
+
+            {/* 3. Synthetic Magenta Midlayer — soft edge for depth */}
+            <div
+              className="reveal-magenta absolute inset-0 z-30 pointer-events-none will-change-transform origin-top bg-magenta"
+              style={{
+                mixBlendMode: 'multiply',
+                opacity: 0.6,
+                WebkitMaskImage: REVEAL_EDGE_MASK,
+                maskImage: REVEAL_EDGE_MASK,
+                WebkitMaskSize: '100% 100%',
+                maskSize: '100% 100%',
+              }}
+            />
+
+            {/* 4. Top Benzi Overlay — soft edge for depth */}
+            <div
+              className="reveal-benzi absolute inset-0 z-40 pointer-events-none will-change-transform origin-top bg-benzi"
+              style={{
+                opacity: 1,
+                WebkitMaskImage: REVEAL_EDGE_MASK,
+                maskImage: REVEAL_EDGE_MASK,
+                WebkitMaskSize: '100% 100%',
+                maskSize: '100% 100%',
+              }}
+            />
           </div>
         </div>
       </Link>
@@ -128,10 +176,17 @@ export const Gallery = () => {
 
       cards.forEach((card) => {
         const container = card.querySelector('.card-container');
-        const benziSolid = card.querySelector('.benzi-solid');
-        const benziOverlay = card.querySelector('.benzi-overlay');
-        const img = card.querySelector('.artwork-image');
+        const glow = card.querySelector('.reveal-glow');
+        const earth = card.querySelector('.reveal-earth');
+        const magenta = card.querySelector('.reveal-magenta');
+        const benzi = card.querySelector('.reveal-benzi');
+        const img = card.querySelector<HTMLElement>('.artwork-image');
         const meta = card.querySelector('.meta-block');
+
+        // Robust null checks so NextJS hot-reloading doesn't choke GSAP
+        if (!glow || !earth || !magenta || !benzi || !img || !meta) return;
+
+        gsap.set([earth, magenta, benzi], { yPercent: 0 });
 
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -142,20 +197,40 @@ export const Gallery = () => {
           },
         });
 
-        // Elegant Institutional Reveal: No jumping shadows. Just a smooth dissolve of the Benzi underpainting.
-        tl.to([benziSolid, benziOverlay], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
-        tl.to(img, { scale: 1, ease: 'power2.out', duration: 1 }, 0);
-        tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.8 }, 0.2);
+        // 1. The Hum: Glow swells up then fades out as the image reveals
+        tl.to(glow, { opacity: 0.8, ease: 'power1.inOut', duration: 0.3 }, 0).to(
+          glow,
+          { opacity: 0, ease: 'power2.out', duration: 0.7 },
+          0.3
+        );
 
-        // Add interactive hover states for the artwork (Movement + Glow Expansion)
+        // 2. The Peel: Staggered wipe upwards — edges blended via mask-image, overlap for depth
+        tl.to(benzi, { yPercent: -101, ease: 'power3.inOut', duration: 1.2 }, 0)
+          .to(magenta, { yPercent: -101, ease: 'power3.inOut', duration: 1.2 }, 0.1)
+          .to(earth, { yPercent: -101, ease: 'power3.inOut', duration: 1.2 }, 0.2);
+
+        // 3. The Settle: Image drops back from scale 1.1 down to 1
+        tl.to(img, { scale: 1, ease: 'power2.out', duration: 1.2 }, 0.2);
+
+        // 4. Metadata Fade Up
+        tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.8 }, 0.4);
+
         if (container && img) {
           card.addEventListener('mouseenter', () => {
-            gsap.to(container, { boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 50px 8px rgba(150,40,20,0.5)', duration: 0.8, ease: 'power2.out' });
+            gsap.to(container, {
+              boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 50px 8px rgba(150,40,20,0.5)',
+              duration: 0.8,
+              ease: 'power2.out',
+            });
             gsap.to(img, { scale: 1.03, duration: 1.2, ease: 'power2.out' });
           });
 
           card.addEventListener('mouseleave', () => {
-            gsap.to(container, { boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 20px 2px rgba(150,40,20,0.15)', duration: 0.8, ease: 'power2.out' });
+            gsap.to(container, {
+              boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 20px 2px rgba(150,40,20,0.15)',
+              duration: 0.8,
+              ease: 'power2.out',
+            });
             gsap.to(img, { scale: 1, duration: 1.2, ease: 'power2.out' });
           });
         }
@@ -166,13 +241,17 @@ export const Gallery = () => {
 
   return (
     <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-32 z-10 flex flex-col items-center">
-      <header className={`fixed top-1/3 left-4 md:left-8 z-50 transition-opacity duration-700 hidden md:block ${isScrolling ? 'opacity-0' : 'opacity-100 pointer-events-none'}`}>
+      <header
+        className={`fixed top-1/3 left-4 md:left-8 z-50 transition-opacity duration-700 hidden md:block ${isScrolling ? 'opacity-0' : 'opacity-100 pointer-events-none'}`}
+      >
         <h1 className="font-sans text-[10px] text-parchment tracking-[0.5em] uppercase opacity-40 [writing-mode:vertical-rl] rotate-180">
           Selected Works
         </h1>
       </header>
 
-      <header className={`md:hidden w-full text-left mb-16 px-2 transition-opacity duration-700 ${isScrolling ? 'opacity-0' : 'opacity-100'}`}>
+      <header
+        className={`md:hidden w-full text-left mb-16 px-2 transition-opacity duration-700 ${isScrolling ? 'opacity-0' : 'opacity-100'}`}
+      >
         <h1 className="font-sans text-[10px] text-parchment tracking-[0.5em] uppercase opacity-40">
           Selected Works
         </h1>
