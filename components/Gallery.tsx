@@ -22,20 +22,17 @@ interface Artwork {
   medium: string;
 }
 
-/* Soft edge mask: fades bottom 25% so layers blend during stagger (no hard lines) */
-const REVEAL_EDGE_MASK = 'linear-gradient(to bottom, black 75%, transparent 100%)';
-
 const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: number }) => {
   const cardRef = useRef<HTMLElement>(null);
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
 
   const getWidthClass = (i: number) => {
-    const widths = ['md:max-w-xl', 'md:max-w-3xl', 'md:max-w-2xl', 'md:max-w-4xl'];
+    const widths =['md:max-w-xl', 'md:max-w-3xl', 'md:max-w-2xl', 'md:max-w-4xl'];
     return `w-full ${widths[i % widths.length]}`;
   };
 
   const getAlignmentClass = (i: number) => {
-    const alignments = ['self-start', 'self-center', 'self-end', 'self-center'];
+    const alignments =['self-start', 'self-center', 'self-end', 'self-center'];
     return alignments[i % alignments.length];
   };
 
@@ -72,54 +69,15 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
               sizes="(max-width: 768px) 100vw, 70vw"
               priority={index < 2}
             />
-
-            {/* 1. Base Glow (The Warm Pink/Brown Hum) */}
-            <div
-              className="reveal-glow absolute inset-0 z-10 pointer-events-none will-change-opacity blur-2xl"
-              style={{
-                background: '#c85a42',
-                mixBlendMode: 'screen',
-                opacity: 0,
-              }}
-            />
-
-            {/* 2. Earth Brown Underlayer — soft edge for depth */}
-            <div
-              className="reveal-earth absolute inset-0 z-20 pointer-events-none will-change-transform origin-top"
-              style={{
-                background: '#3e1f0e',
-                opacity: 0.9,
-                WebkitMaskImage: REVEAL_EDGE_MASK,
-                maskImage: REVEAL_EDGE_MASK,
-                WebkitMaskSize: '100% 100%',
-                maskSize: '100% 100%',
-              }}
-            />
-
-            {/* 3. Synthetic Magenta Midlayer — soft edge for depth */}
-            <div
-              className="reveal-magenta absolute inset-0 z-30 pointer-events-none will-change-transform origin-top bg-magenta"
-              style={{
-                mixBlendMode: 'multiply',
-                opacity: 0.6,
-                WebkitMaskImage: REVEAL_EDGE_MASK,
-                maskImage: REVEAL_EDGE_MASK,
-                WebkitMaskSize: '100% 100%',
-                maskSize: '100% 100%',
-              }}
-            />
-
-            {/* 4. Top Benzi Overlay — soft edge for depth */}
-            <div
-              className="reveal-benzi absolute inset-0 z-40 pointer-events-none will-change-transform origin-top bg-benzi"
-              style={{
-                opacity: 1,
-                WebkitMaskImage: REVEAL_EDGE_MASK,
-                maskImage: REVEAL_EDGE_MASK,
-                WebkitMaskSize: '100% 100%',
-                maskSize: '100% 100%',
-              }}
-            />
+            
+            {/* Base tint: Gives the raw painting an 'underpainting' warmth but keeps the art completely visible when static */}
+            <div className="benzi-tint absolute inset-0 bg-benzi mix-blend-color opacity-60 z-10 pointer-events-none will-change-opacity" />
+            
+            {/* Magenta Core Light: Starts invisible, flares & extends on scroll, then fades to 0 */}
+            <div className="magenta-light absolute inset-0 bg-magenta mix-blend-screen opacity-0 blur-[60px] scale-90 z-20 pointer-events-none will-change-transform" />
+            
+            {/* Brownish Blur Light: Starts invisible, flares warm & extends on scroll, then fades to 0 */}
+            <div className="brown-light absolute inset-0 bg-[#c85a42] mix-blend-screen opacity-0 blur-[80px] scale-90 z-20 pointer-events-none will-change-transform" />
           </div>
         </div>
       </Link>
@@ -176,17 +134,14 @@ export const Gallery = () => {
 
       cards.forEach((card) => {
         const container = card.querySelector('.card-container');
-        const glow = card.querySelector('.reveal-glow');
-        const earth = card.querySelector('.reveal-earth');
-        const magenta = card.querySelector('.reveal-magenta');
-        const benzi = card.querySelector('.reveal-benzi');
+        const benziTint = card.querySelector('.benzi-tint');
+        const magentaLight = card.querySelector('.magenta-light');
+        const brownLight = card.querySelector('.brown-light');
         const img = card.querySelector<HTMLElement>('.artwork-image');
         const meta = card.querySelector('.meta-block');
 
         // Robust null checks so NextJS hot-reloading doesn't choke GSAP
-        if (!glow || !earth || !magenta || !benzi || !img || !meta) return;
-
-        gsap.set([earth, magenta, benzi], { yPercent: 0 });
+        if (!img || !meta) return;
 
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -197,24 +152,28 @@ export const Gallery = () => {
           },
         });
 
-        // 1. The Hum: Glow swells up then fades out as the image reveals
-        tl.to(glow, { opacity: 0.8, ease: 'power1.inOut', duration: 0.3 }, 0).to(
-          glow,
-          { opacity: 0, ease: 'power2.out', duration: 0.7 },
-          0.3
-        );
+        // 1. The Scroll Lights: Flare up (0 -> 0.3 progress) and expand, then fade out entirely (0.3 -> 1.0)
+        if (magentaLight) {
+          tl.to(magentaLight, { opacity: 0.35, scale: 1.1, duration: 0.3, ease: 'power1.inOut' }, 0)
+            .to(magentaLight, { opacity: 0, scale: 1.3, duration: 0.7, ease: 'power2.out' }, 0.3);
+        }
+        if (brownLight) {
+          tl.to(brownLight, { opacity: 0.5, scale: 1.1, duration: 0.3, ease: 'power1.inOut' }, 0)
+            .to(brownLight, { opacity: 0, scale: 1.4, duration: 0.7, ease: 'power2.out' }, 0.3);
+        }
 
-        // 2. The Peel: Staggered wipe upwards — edges blended via mask-image, overlap for depth
-        tl.to(benzi, { yPercent: -101, ease: 'power3.inOut', duration: 1.2 }, 0)
-          .to(magenta, { yPercent: -101, ease: 'power3.inOut', duration: 1.2 }, 0.1)
-          .to(earth, { yPercent: -101, ease: 'power3.inOut', duration: 1.2 }, 0.2);
+        // 2. The Original Dissolve: The overall benzi tint smoothy fades to 0
+        if (benziTint) {
+          tl.to(benziTint, { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
+        }
 
-        // 3. The Settle: Image drops back from scale 1.1 down to 1
-        tl.to(img, { scale: 1, ease: 'power2.out', duration: 1.2 }, 0.2);
+        // 3. The Original Settle: Image drops back from scale 1.1 down to 1
+        tl.to(img, { scale: 1, ease: 'power2.out', duration: 1 }, 0);
 
         // 4. Metadata Fade Up
-        tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.8 }, 0.4);
+        tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.8 }, 0.2);
 
+        // Interactive Hover States
         if (container && img) {
           card.addEventListener('mouseenter', () => {
             gsap.to(container, {
