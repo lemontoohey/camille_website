@@ -73,6 +73,8 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
             {/* 1. Benzi Brown 25 Masstone (Color & Solid): Heavy earthy overlay, painting barely discernible — 82% at start */}
             <div className="benzi-color absolute inset-0 bg-[#592512] mix-blend-color opacity-[0.82] z-10 pointer-events-none will-change-opacity" />
             <div className="benzi-solid absolute inset-0 bg-[#3a1707] opacity-[0.82] z-10 pointer-events-none will-change-opacity" />
+            {/* Benzi Brown A Glaze: Red undertone, moves in unison — 50% at start */}
+            <div className="benzi-glaze absolute inset-0 bg-[#8b3d2a] mix-blend-color opacity-[0.5] z-10 pointer-events-none will-change-opacity" />
             
             {/* 2. Magenta Core Light: Starts invisible, flares & extends on scroll, then fades to 0 */}
             <div className="magenta-light absolute inset-0 bg-magenta mix-blend-screen opacity-0 blur-[60px] scale-90 z-20 pointer-events-none will-change-transform" />
@@ -137,6 +139,7 @@ export const Gallery = () => {
         const container = card.querySelector('.card-container');
         const benziColor = card.querySelector('.benzi-color');
         const benziSolid = card.querySelector('.benzi-solid');
+        const benziGlaze = card.querySelector('.benzi-glaze');
         const magentaLight = card.querySelector('.magenta-light');
         const brownLight = card.querySelector('.brown-light');
         const img = card.querySelector<HTMLElement>('.artwork-image');
@@ -164,8 +167,10 @@ export const Gallery = () => {
             .to(brownLight, { opacity: 0, scale: 1.03, duration: 0.5, ease: 'power2.inOut' }, 0.5);
         }
 
-        // 2. The Heavy Dissolve: The browner Benzi 25 masstone fades completely out to reveal the raw painting
-        if (benziColor && benziSolid) {
+        // 2. The Heavy Dissolve: Benzi masstone + glaze fades out to reveal the raw painting
+        if (benziColor && benziSolid && benziGlaze) {
+          tl.to([benziColor, benziSolid, benziGlaze], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
+        } else if (benziColor && benziSolid) {
           tl.to([benziColor, benziSolid], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
         }
 
