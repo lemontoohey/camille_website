@@ -55,27 +55,28 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
         className="block w-full cursor-pointer"
       >
         <div
-          className="card-container relative w-full aspect-[4/5] bg-void [transform-style:preserve-3d] will-change-transform"
+          className="card-container relative w-full aspect-[4/5] bg-void [transform-style:preserve-3d] will-change-transform overflow-hidden rounded-sm [contain:paint]"
           style={{
             boxShadow: '0 40px 80px -20px rgba(35,15,60,0.8), 0 0 30px 2px rgba(90,30,120,0.2)',
           }}
         >
+          {/* Soft vignette: inset magenta/violet hugs frame, no mix-blend clipping */}
+          <div className="absolute inset-0 pointer-events-none rounded-sm" style={{ boxShadow: 'inset 0 0 60px 10px rgba(107, 0, 56, 0.15)' }} aria-hidden />
           {/* Microscopic noise overlay to dither Dioxazine shadow banding */}
           <div className="absolute inset-0 z-[5] pointer-events-none opacity-[0.015] bg-noise mix-blend-overlay" aria-hidden />
+          {/* Physical canvas surface: image + glazes move/scale as one locked object */}
           <div className="image-wrapper absolute inset-0 overflow-hidden will-change-transform">
             <Image
               src={imageSrc}
               alt={artwork.title}
               fill
-              className="artwork-image object-cover scale-110 will-change-transform"
+              className="artwork-image object-cover will-change-transform"
               sizes="(max-width: 768px) 100vw, 70vw"
               priority={index < 2}
             />
             <div className="benzi-color absolute inset-0 bg-[#592512] mix-blend-color opacity-[0.82] z-10 pointer-events-none will-change-opacity md:backdrop-brightness-[1.15] md:backdrop-contrast-[1.05]" />
             <div className="benzi-solid absolute inset-0 bg-[#3a1707] opacity-[0.82] z-10 pointer-events-none will-change-opacity" />
             <div className="benzi-glaze absolute inset-0 bg-[#8b3d2a] mix-blend-color opacity-[0.5] z-10 pointer-events-none will-change-opacity md:backdrop-brightness-[1.15] md:backdrop-contrast-[1.05]" />
-            {/* Optical edge burn: luminous violet/magenta at edges, inversely linked to benzi reveal */}
-            <div className="violet-edge-burn absolute inset-0 z-[15] mix-blend-color-dodge opacity-0 pointer-events-none will-change-opacity overflow-hidden" style={{ background: 'radial-gradient(ellipse at center, transparent 25%, rgba(90,30,120,0.4) 60%, rgba(228,0,120,0.6) 100%)' }} />
             <div className="magenta-light absolute inset-0 bg-magenta mix-blend-screen opacity-0 blur-[40px] md:blur-[60px] scale-90 z-20 pointer-events-none will-change-transform" />
             <div className="brown-light absolute inset-0 bg-[#c85a42] mix-blend-screen opacity-0 blur-[50px] md:blur-[80px] scale-90 z-20 pointer-events-none will-change-transform" />
           </div>
@@ -147,17 +148,17 @@ export const Gallery = () => {
 
       cards.forEach((card) => {
         const container = card.querySelector('.card-container');
+        const imageWrapper = card.querySelector<HTMLElement>('.image-wrapper');
         const img = card.querySelector<HTMLElement>('.artwork-image');
         const benziColor = card.querySelector('.benzi-color');
         const benziSolid = card.querySelector('.benzi-solid');
         const benziGlaze = card.querySelector('.benzi-glaze');
-        const violetEdgeBurn = card.querySelector('.violet-edge-burn');
         const magentaLight = card.querySelector('.magenta-light');
         const brownLight = card.querySelector('.brown-light');
         const meta = card.querySelector('.meta-block');
         const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 769px)').matches;
 
-        if (!img || !meta || !container) return;
+        if (!imageWrapper || !img || !meta || !container) return;
 
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -181,10 +182,6 @@ export const Gallery = () => {
         } else if (benziColor && benziSolid) {
           tl.to([benziColor, benziSolid], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
         }
-        // Violet edge burn: inversely linked — fades in as benzi dissolves (wet paint chemical burn)
-        if (violetEdgeBurn) {
-          tl.to(violetEdgeBurn, { opacity: 0.4, ease: 'power2.inOut', duration: 1 }, 0);
-        }
         // Dioxazine shadow expansion: brown light pushes violet shadow deeper (desktop only; mobile = static)
         if (isDesktop) {
           tl.to(container, {
@@ -194,10 +191,11 @@ export const Gallery = () => {
           }, 0);
         }
 
+        // Physical canvas: wrapper (image + glazes) moves/scale as one; edges always bleed past frame
         tl.fromTo(
-          img,
-          { scale: 1.1, yPercent: -4 },
-          { scale: 1, yPercent: 4, ease: 'power2.out', duration: 1 },
+          imageWrapper,
+          { scale: 1.15, yPercent: -3 },
+          { scale: 1.05, yPercent: 3, ease: 'power2.out', duration: 1 },
           0
         );
 
