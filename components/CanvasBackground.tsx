@@ -19,7 +19,7 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uColorPG7: new THREE.Color('#003038'),
     uColorMagenta: new THREE.Color('#6b0038'),
     uColorGlow: new THREE.Color('#8b5cf6'),
-    uColorViolet: new THREE.Color('#5c3d70'),
+    uReduceMotion: 0,
     uColorViolet1: new THREE.Color('#5a4a6e'),
     uColorViolet2: new THREE.Color('#4a3658'),
     uColorViolet3: new THREE.Color('#362548'),
@@ -43,7 +43,7 @@ const ArchivalCanvasMaterial = shaderMaterial(
     uniform vec3 uColorPG7;
     uniform vec3 uColorMagenta;
     uniform vec3 uColorGlow;
-    uniform vec3 uColorViolet;
+    uniform float uReduceMotion;
     uniform vec3 uColorViolet1;
     uniform vec3 uColorViolet2;
     uniform vec3 uColorViolet3;
@@ -85,28 +85,29 @@ const ArchivalCanvasMaterial = shaderMaterial(
       float topBottomMask = mix(1.0, barCenterMask, uMobile);
       finalColor += bandColor * band * bandOpacity * topBottomMask;
 
-      // 3. THREE-TIER PARALLAX PARTICLES — 3 violet shades, barely visible
-      
+      // 3. THREE-TIER PARALLAX PARTICLES — 3 violet shades, barely visible (disabled when prefers-reduced-motion)
+      float motionFactor = 1.0 - uReduceMotion;
+
       // Layer 1: Far background (slow, tiny, light violet)
       vec2 pUv1 = uv * vec2(uResolution.x / uResolution.y, 1.0) * 3.5;
       vec2 offset1 = vec2(uTime * 0.008, uTime * 0.015 + scrollOffset * 0.15);
       float n1 = random(pUv1 - offset1);
       float d1 = pow(n1, 110.0);
-      finalColor += uColorViolet1 * d1 * 0.012;
+      finalColor += uColorViolet1 * d1 * 0.012 * motionFactor;
 
       // Layer 2: Midground (medium speed, medium size, mid violet)
       vec2 pUv2 = uv * vec2(uResolution.x / uResolution.y, 1.0) * 2.2;
       vec2 offset2 = vec2(uTime * 0.018, uTime * 0.035 + scrollOffset * 0.5);
       float n2 = random(pUv2 - offset2);
       float d2 = pow(n2, 85.0);
-      finalColor += uColorViolet2 * d2 * 0.015;
+      finalColor += uColorViolet2 * d2 * 0.015 * motionFactor;
 
       // Layer 3: Foreground (fast, larger, dark violet)
       vec2 pUv3 = uv * vec2(uResolution.x / uResolution.y, 1.0) * 1.2;
       vec2 offset3 = vec2(uTime * 0.025, uTime * 0.05 + scrollOffset * 1.0);
       float n3 = random(pUv3 - offset3);
       float d3 = pow(n3, 55.0);
-      finalColor += uColorViolet3 * d3 * 0.01;
+      finalColor += uColorViolet3 * d3 * 0.01 * motionFactor;
 
       // Finishing Screen Grain
       float screenGrain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
@@ -127,8 +128,9 @@ const ShaderPlane = () => {
   const velocityTracker = useRef({ value: 0 });
 
   useFrame((state) => {
-    if (materialRef.current) {
-      materialRef.current.uniforms.uMobile.value = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches ? 1 : 0;
+    if (materialRef.current && typeof window !== 'undefined') {
+      materialRef.current.uniforms.uMobile.value = window.matchMedia('(max-width: 768px)').matches ? 1 : 0;
+      materialRef.current.uniforms.uReduceMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0;
     }
     if (isCanvasPaused) return;
     
@@ -152,9 +154,20 @@ const ShaderPlane = () => {
 };
 
 export const CanvasBackground = React.memo(() => {
+  const onCreated = useRef(({ gl }: { gl: THREE.WebGLRenderer }) => {
+    gl.domElement.addEventListener('webglcontextlost', (e) => e.preventDefault(), { capture: true });
+    gl.domElement.addEventListener('webglcontextrestored', () => {}, { once: false });
+  }).current;
+
   return (
     <div className="fixed inset-0 pointer-events-none bg-void" style={{ zIndex: 0 }}>
-      <Canvas dpr={1} orthographic camera={{ position: [0, 0, 1], zoom: 1 }} gl={{ antialias: false, powerPreference: 'default' }}>
+      <Canvas
+        dpr={1}
+        orthographic
+        camera={{ position: [0, 0, 1], zoom: 1 }}
+        gl={{ antialias: false, powerPreference: 'default' }}
+        onCreated={onCreated}
+      >
         <ShaderPlane />
       </Canvas>
     </div>

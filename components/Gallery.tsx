@@ -27,12 +27,12 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
 
   const getWidthClass = (i: number) => {
-    const widths =['md:max-w-xl', 'md:max-w-3xl', 'md:max-w-2xl', 'md:max-w-4xl'];
+    const widths = ['md:max-w-xl', 'md:max-w-3xl', 'md:max-w-2xl', 'md:max-w-4xl'];
     return `w-full ${widths[i % widths.length]}`;
   };
 
   const getAlignmentClass = (i: number) => {
-    const alignments =['self-start', 'self-center', 'self-end', 'self-center'];
+    const alignments = ['self-start', 'self-center', 'self-end', 'self-center'];
     return alignments[i % alignments.length];
   };
 
@@ -47,7 +47,7 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
   return (
     <article
       ref={cardRef}
-      className={`artwork-card relative group flex flex-col gap-8 w-full ${getAlignmentClass(index)} ${getWidthClass(index)}`}
+      className={`artwork-card relative group flex flex-col gap-8 w-full perspective-[2000px] ${getAlignmentClass(index)} ${getWidthClass(index)}`}
     >
       <Link
         href={`/art/${artwork.id}`}
@@ -55,7 +55,7 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
         className="block w-full cursor-pointer"
       >
         <div
-          className="card-container relative w-full aspect-[4/5] bg-void"
+          className="card-container relative w-full aspect-[4/5] bg-void [transform-style:preserve-3d] will-change-transform"
           style={{
             boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 20px 2px rgba(150,40,20,0.15)',
           }}
@@ -69,29 +69,20 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
               sizes="(max-width: 768px) 100vw, 70vw"
               priority={index < 2}
             />
-            
-            {/* 1. Benzi Brown 25 Masstone (Color & Solid): Heavy earthy overlay, painting barely discernible — 82% at start */}
             <div className="benzi-color absolute inset-0 bg-[#592512] mix-blend-color opacity-[0.82] z-10 pointer-events-none will-change-opacity" />
             <div className="benzi-solid absolute inset-0 bg-[#3a1707] opacity-[0.82] z-10 pointer-events-none will-change-opacity" />
-            {/* Benzi Brown A Glaze: Red undertone, moves in unison — 50% at start */}
             <div className="benzi-glaze absolute inset-0 bg-[#8b3d2a] mix-blend-color opacity-[0.5] z-10 pointer-events-none will-change-opacity" />
-            
-            {/* 2. Magenta Core Light: Starts invisible, flares & extends on scroll, then fades to 0 */}
             <div className="magenta-light absolute inset-0 bg-magenta mix-blend-screen opacity-0 blur-[60px] scale-90 z-20 pointer-events-none will-change-transform" />
-            
-            {/* 3. Brownish Blur Light: Starts invisible, flares warm & extends on scroll, then fades to 0 */}
             <div className="brown-light absolute inset-0 bg-[#c85a42] mix-blend-screen opacity-0 blur-[80px] scale-90 z-20 pointer-events-none will-change-transform" />
           </div>
         </div>
       </Link>
 
-      {/* METADATA */}
       <div className="meta-block flex flex-col gap-3 px-2 sm:px-0 opacity-0 translate-y-8 will-change-transform">
         <div className="flex flex-row justify-between items-baseline gap-8">
           <h2 className="text-parchment font-serif text-base md:text-xl leading-tight tracking-wide group-hover:text-benzi transition-colors duration-500">
             {artwork.title}
           </h2>
-
           <div className="relative overflow-hidden">
             <div className="relative">
               <span className="block text-parchment/70 font-sans tracking-[0.1em] text-sm font-light transition-all duration-500 group-hover:opacity-0 group-hover:-translate-y-full">
@@ -123,6 +114,9 @@ export const Gallery = () => {
 
   useGSAP(
     () => {
+      let proxy = { skew: 0 };
+      const skewSetter = gsap.quickSetter('.artwork-card', 'skewY', 'deg');
+
       ScrollTrigger.create({
         trigger: containerRef.current,
         start: 'top bottom',
@@ -131,21 +125,33 @@ export const Gallery = () => {
         onLeave: () => setCanvasPaused(true),
         onEnterBack: () => setCanvasPaused(false),
         onLeaveBack: () => setCanvasPaused(true),
+        onUpdate: (self) => {
+          const skewAmount = gsap.utils.clamp(-1.5, 1.5, self.getVelocity() / -800);
+          if (Math.abs(skewAmount) > Math.abs(proxy.skew)) {
+            proxy.skew = skewAmount;
+            gsap.to(proxy, {
+              skew: 0,
+              duration: 1.2,
+              ease: 'elastic.out(1, 0.3)',
+              onUpdate: () => skewSetter(proxy.skew),
+            });
+          }
+        },
       });
 
       const cards = gsap.utils.toArray<HTMLElement>('.artwork-card');
 
       cards.forEach((card) => {
         const container = card.querySelector('.card-container');
+        const img = card.querySelector<HTMLElement>('.artwork-image');
         const benziColor = card.querySelector('.benzi-color');
         const benziSolid = card.querySelector('.benzi-solid');
         const benziGlaze = card.querySelector('.benzi-glaze');
         const magentaLight = card.querySelector('.magenta-light');
         const brownLight = card.querySelector('.brown-light');
-        const img = card.querySelector<HTMLElement>('.artwork-image');
         const meta = card.querySelector('.meta-block');
 
-        if (!img || !meta) return;
+        if (!img || !meta || !container) return;
 
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -156,50 +162,63 @@ export const Gallery = () => {
           },
         });
 
-        // 1. Magenta glow: Barely visible flash (low contrast)
         if (magentaLight) {
           tl.to(magentaLight, { opacity: 0.08, scale: 1.05, duration: 0.3, ease: 'power1.inOut' }, 0)
             .to(magentaLight, { opacity: 0, scale: 1.15, duration: 0.7, ease: 'power2.out' }, 0.3);
         }
-        // 2. Brown light: Slow, lazy, organic — runs almost at benzi overlay speed (full duration)
         if (brownLight) {
           tl.to(brownLight, { opacity: 0.3, scale: 1.02, duration: 0.5, ease: 'power2.inOut' }, 0)
             .to(brownLight, { opacity: 0, scale: 1.03, duration: 0.5, ease: 'power2.inOut' }, 0.5);
         }
-
-        // 2. The Heavy Dissolve: Benzi masstone + glaze fades out to reveal the raw painting
         if (benziColor && benziSolid && benziGlaze) {
           tl.to([benziColor, benziSolid, benziGlaze], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
         } else if (benziColor && benziSolid) {
           tl.to([benziColor, benziSolid], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
         }
 
-        // 3. The Original Settle: Image drops back from scale 1.1 down to 1
-        tl.to(img, { scale: 1, ease: 'power2.out', duration: 1 }, 0);
+        tl.fromTo(
+          img,
+          { scale: 1.1, yPercent: -4 },
+          { scale: 1, yPercent: 4, ease: 'power2.out', duration: 1 },
+          0
+        );
 
-        // 4. Metadata Fade Up
         tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.8 }, 0.2);
 
-        // Interactive Hover States
-        if (container && img) {
-          card.addEventListener('mouseenter', () => {
-            gsap.to(container, {
-              boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 50px 8px rgba(150,40,20,0.5)',
-              duration: 0.8,
-              ease: 'power2.out',
-            });
-            gsap.to(img, { scale: 1.03, duration: 1.2, ease: 'power2.out' });
+        const handleMouseMove = (e: MouseEvent) => {
+          const rect = card.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          const rotateX = ((e.clientY - centerY) / (rect.height / 2)) * -3;
+          const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 3;
+          const shadowX = ((e.clientX - centerX) / (rect.width / 2)) * -20;
+          const shadowY = ((e.clientY - centerY) / (rect.height / 2)) * -20;
+          gsap.to(container, {
+            rotateX,
+            rotateY,
+            boxShadow: `${shadowX}px ${40 + shadowY}px 80px -20px rgba(10,5,25,1), 0 0 50px 8px rgba(150,40,20,0.4)`,
+            duration: 0.6,
+            ease: 'power3.out',
+            overwrite: 'auto',
           });
+        };
 
-          card.addEventListener('mouseleave', () => {
-            gsap.to(container, {
-              boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 20px 2px rgba(150,40,20,0.15)',
-              duration: 0.8,
-              ease: 'power2.out',
-            });
-            gsap.to(img, { scale: 1, duration: 1.2, ease: 'power2.out' });
+        card.addEventListener('mouseenter', () => {
+          gsap.to(img, { scale: 1.03, duration: 1.2, ease: 'power2.out' });
+          card.addEventListener('mousemove', handleMouseMove);
+        });
+
+        card.addEventListener('mouseleave', () => {
+          card.removeEventListener('mousemove', handleMouseMove);
+          gsap.to(container, {
+            rotateX: 0,
+            rotateY: 0,
+            boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 20px 2px rgba(150,40,20,0.15)',
+            duration: 1.2,
+            ease: 'elastic.out(1, 0.4)',
           });
-        }
+          gsap.to(img, { scale: 1, duration: 1.2, ease: 'power2.out' });
+        });
       });
     },
     { scope: containerRef }
@@ -214,7 +233,6 @@ export const Gallery = () => {
           Selected Works
         </h1>
       </header>
-
       <header
         className={`md:hidden w-full text-left mb-16 px-2 transition-opacity duration-700 ${isScrolling ? 'opacity-0' : 'opacity-100'}`}
       >
@@ -222,7 +240,6 @@ export const Gallery = () => {
           Selected Works
         </h1>
       </header>
-
       <div className="flex flex-col gap-y-48 md:gap-y-96 items-start w-full pb-48 mt-12">
         {(artworksData as Artwork[]).map((artwork, idx) => (
           <PureArtworkCard key={artwork.id} artwork={artwork} index={idx} />
