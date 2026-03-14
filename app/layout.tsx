@@ -58,7 +58,7 @@ export default function RootLayout({
         {/* Client-side Providers wrapper (Lenis Smooth Scroll, Zustand Init, GSAP Registry) */}
         <Providers>
           {/* Main content layer, rendered over WebGL background */}
-          <main className="relative z-10 w-full min-h-screen">
+          <main className="relative z-10 w-full min-h-screen touch-pan-y">
             {children}
           </main>
         </Providers>

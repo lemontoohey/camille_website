@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useUiStore } from '@/store/useUiStore';
 import { useHapticSound } from '@/hooks/useHapticSound';
@@ -31,7 +31,12 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
     router.back();
   };
 
-  // --- DEPTH TRICK 2: INTERACTIVE VARNISH SHEEN ---
+  const [hasHover, setHasHover] = useState(false);
+  useEffect(() => {
+    setHasHover(window.matchMedia('(hover: hover)').matches);
+  }, []);
+
+  // --- DEPTH TRICK 2: INTERACTIVE VARNISH SHEEN (hover devices only; touch = static center) ---
   const mouseX = useMotionValue(0.5);
   const mouseY = useMotionValue(0.5);
 
@@ -41,7 +46,6 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
     mouseY.set((e.clientY - rect.top) / rect.height);
   };
 
-  // Map mouse position to movement, wrap in a spring for liquid smoothness
   const glareX = useSpring(useTransform(mouseX, [0, 1], ['-100%', '200%']), { damping: 25, stiffness: 150 });
   const glareY = useSpring(useTransform(mouseY, [0, 1], ['-100%', '200%']), { damping: 25, stiffness: 150 });
 
@@ -77,12 +81,11 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
       {/* LEFT COLUMN - ARTWORK CONTAINER */}
       <div className="relative flex items-center justify-center">
 
-        {/* --- DEPTH TRICK 1: AMBIENT WALL CAST --- */}
+        {/* --- DEPTH TRICK 1: AMBIENT WALL CAST (reduced blur on mobile for GPU perf) --- */}
         <motion.div
-          className="absolute inset-0 z-0 pointer-events-none mix-blend-screen"
+          className="absolute inset-0 z-0 pointer-events-none mix-blend-screen blur-[40px] md:blur-[60px] will-change-[transform,opacity]"
           style={{
             background: `radial-gradient(circle at 50% 50%, ${artwork.colors[0]}30 0%, transparent 60%)`,
-            filter: 'blur(60px)'
           }}
           animate={{ scale: [1, 1.05, 1], opacity: [0.4, 0.7, 0.4] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
@@ -90,10 +93,12 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
 
         <motion.div
           layoutId={`artwork-container-${artwork.id}`}
-          onMouseMove={handleMouseMove}
+          onMouseMove={hasHover ? handleMouseMove : undefined}
           className="relative w-full aspect-[4/5] md:aspect-auto md:h-[80vh] bg-void/50 overflow-hidden mt-8 md:mt-0 z-10"
-          style={{ boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 30px 2px rgba(150,40,20,0.1)' }}
+          style={{ boxShadow: '0 40px 80px -20px rgba(35,15,60,0.8), 0 0 30px 2px rgba(90,30,120,0.2)' }}
         >
+          {/* Microscopic noise overlay to dither Dioxazine shadow banding */}
+          <div className="absolute inset-0 z-[5] pointer-events-none opacity-[0.015] bg-noise mix-blend-overlay" aria-hidden />
           <motion.div
             layoutId={`artwork-image-${artwork.id}`}
             className="absolute inset-0 w-full h-full transition-transform duration-[1200ms] hover:scale-[1.02] lux-ease"
@@ -101,7 +106,7 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
             {artwork.colors.map((color, idx) => (
               <div
                 key={idx}
-                className="absolute shadow-[0_0_40px_rgba(0,0,0,0.8)] mix-blend-screen"
+                className="absolute shadow-[0_0_40px_rgba(35,15,60,0.6)] mix-blend-screen"
                 style={{
                   backgroundColor: color,
                   inset: `${idx * 15}%`,
@@ -111,9 +116,9 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
               />
             ))}
 
-            {/* THE VARNISH SHEEN OVERLAY */}
+            {/* THE VARNISH SHEEN OVERLAY (interactive on hover; static center on touch) */}
             <motion.div
-              className="absolute inset-0 z-20 pointer-events-none mix-blend-overlay opacity-30"
+              className="absolute inset-0 z-20 pointer-events-none mix-blend-overlay opacity-30 will-change-transform"
               style={{
                 background: 'radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, transparent 50%)',
                 x: glareX,

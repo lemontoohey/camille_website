@@ -70,9 +70,12 @@ const ArchivalCanvasMaterial = shaderMaterial(
       float toothPattern = smoothstep(0.45, 0.55, grainBase);
       vec3 finalColor = mix(uColorBase, uColorPaper, toothPattern * 0.15);
 
-      // 2. CHROMATIC GREY BAND & PALE VIOLET FRICTION LIGHT
+      // 2. CHROMATIC GREY BAND & PALE VIOLET FRICTION LIGHT + VELOCITY HALATION (chromatic aberration)
       float posB = fract(0.5 + scrollOffset * 0.4);
-      float band = drawBand(uv.x, posB, 0.015, 0.15); 
+      float halationOffset = uVelocity * 0.002;
+      float bandR = drawBand(uv.x + halationOffset, posB, 0.015, 0.15);
+      float bandG = drawBand(uv.x, posB, 0.015, 0.15);
+      float bandB = drawBand(uv.x - halationOffset, posB, 0.015, 0.15);
       
       vec3 chromaticGrey = mix(uColorPG7, uColorMagenta, 0.5); 
 
@@ -83,7 +86,7 @@ const ArchivalCanvasMaterial = shaderMaterial(
       
       float bandOpacity = 0.04 + (scrollLight * 0.12);
       float topBottomMask = mix(1.0, barCenterMask, uMobile);
-      finalColor += bandColor * band * bandOpacity * topBottomMask;
+      finalColor += vec3(bandColor.r * bandR, bandColor.g * bandG, bandColor.b * bandB) * bandOpacity * topBottomMask;
 
       // 3. THREE-TIER PARALLAX PARTICLES — 3 violet shades, barely visible (disabled when prefers-reduced-motion)
       float motionFactor = 1.0 - uReduceMotion;

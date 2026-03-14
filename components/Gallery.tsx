@@ -57,9 +57,11 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
         <div
           className="card-container relative w-full aspect-[4/5] bg-void [transform-style:preserve-3d] will-change-transform"
           style={{
-            boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 20px 2px rgba(150,40,20,0.15)',
+            boxShadow: '0 40px 80px -20px rgba(35,15,60,0.8), 0 0 30px 2px rgba(90,30,120,0.2)',
           }}
         >
+          {/* Microscopic noise overlay to dither Dioxazine shadow banding */}
+          <div className="absolute inset-0 z-[5] pointer-events-none opacity-[0.015] bg-noise mix-blend-overlay" aria-hidden />
           <div className="image-wrapper absolute inset-0 overflow-hidden will-change-transform">
             <Image
               src={imageSrc}
@@ -69,11 +71,13 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
               sizes="(max-width: 768px) 100vw, 70vw"
               priority={index < 2}
             />
-            <div className="benzi-color absolute inset-0 bg-[#592512] mix-blend-color opacity-[0.82] z-10 pointer-events-none will-change-opacity" />
+            <div className="benzi-color absolute inset-0 bg-[#592512] mix-blend-color opacity-[0.82] z-10 pointer-events-none will-change-opacity md:backdrop-brightness-[1.15] md:backdrop-contrast-[1.05]" />
             <div className="benzi-solid absolute inset-0 bg-[#3a1707] opacity-[0.82] z-10 pointer-events-none will-change-opacity" />
-            <div className="benzi-glaze absolute inset-0 bg-[#8b3d2a] mix-blend-color opacity-[0.5] z-10 pointer-events-none will-change-opacity" />
-            <div className="magenta-light absolute inset-0 bg-magenta mix-blend-screen opacity-0 blur-[60px] scale-90 z-20 pointer-events-none will-change-transform" />
-            <div className="brown-light absolute inset-0 bg-[#c85a42] mix-blend-screen opacity-0 blur-[80px] scale-90 z-20 pointer-events-none will-change-transform" />
+            <div className="benzi-glaze absolute inset-0 bg-[#8b3d2a] mix-blend-color opacity-[0.5] z-10 pointer-events-none will-change-opacity md:backdrop-brightness-[1.15] md:backdrop-contrast-[1.05]" />
+            {/* Optical edge burn: luminous violet/magenta at edges, inversely linked to benzi reveal */}
+            <div className="violet-edge-burn absolute inset-0 z-[15] mix-blend-color-dodge opacity-0 pointer-events-none will-change-opacity overflow-hidden" style={{ background: 'radial-gradient(ellipse at center, transparent 25%, rgba(90,30,120,0.4) 60%, rgba(228,0,120,0.6) 100%)' }} />
+            <div className="magenta-light absolute inset-0 bg-magenta mix-blend-screen opacity-0 blur-[40px] md:blur-[60px] scale-90 z-20 pointer-events-none will-change-transform" />
+            <div className="brown-light absolute inset-0 bg-[#c85a42] mix-blend-screen opacity-0 blur-[50px] md:blur-[80px] scale-90 z-20 pointer-events-none will-change-transform" />
           </div>
         </div>
       </Link>
@@ -147,9 +151,11 @@ export const Gallery = () => {
         const benziColor = card.querySelector('.benzi-color');
         const benziSolid = card.querySelector('.benzi-solid');
         const benziGlaze = card.querySelector('.benzi-glaze');
+        const violetEdgeBurn = card.querySelector('.violet-edge-burn');
         const magentaLight = card.querySelector('.magenta-light');
         const brownLight = card.querySelector('.brown-light');
         const meta = card.querySelector('.meta-block');
+        const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 769px)').matches;
 
         if (!img || !meta || !container) return;
 
@@ -175,6 +181,18 @@ export const Gallery = () => {
         } else if (benziColor && benziSolid) {
           tl.to([benziColor, benziSolid], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
         }
+        // Violet edge burn: inversely linked — fades in as benzi dissolves (wet paint chemical burn)
+        if (violetEdgeBurn) {
+          tl.to(violetEdgeBurn, { opacity: 0.4, ease: 'power2.inOut', duration: 1 }, 0);
+        }
+        // Dioxazine shadow expansion: brown light pushes violet shadow deeper (desktop only; mobile = static)
+        if (isDesktop) {
+          tl.to(container, {
+            boxShadow: '0 50px 100px -25px rgba(35,15,60,0.9), 0 0 50px 4px rgba(90,30,120,0.35)',
+            ease: 'power2.inOut',
+            duration: 1,
+          }, 0);
+        }
 
         tl.fromTo(
           img,
@@ -185,40 +203,43 @@ export const Gallery = () => {
 
         tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.8 }, 0.2);
 
-        const handleMouseMove = (e: MouseEvent) => {
-          const rect = card.getBoundingClientRect();
-          const centerX = rect.left + rect.width / 2;
-          const centerY = rect.top + rect.height / 2;
-          const rotateX = ((e.clientY - centerY) / (rect.height / 2)) * -3;
-          const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 3;
-          const shadowX = ((e.clientX - centerX) / (rect.width / 2)) * -20;
-          const shadowY = ((e.clientY - centerY) / (rect.height / 2)) * -20;
-          gsap.to(container, {
-            rotateX,
-            rotateY,
-            boxShadow: `${shadowX}px ${40 + shadowY}px 80px -20px rgba(10,5,25,1), 0 0 50px 8px rgba(150,40,20,0.4)`,
-            duration: 0.6,
-            ease: 'power3.out',
-            overwrite: 'auto',
-          });
-        };
+        const hasHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches;
+        if (hasHover) {
+          const handleMouseMove = (e: MouseEvent) => {
+            const rect = card.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const rotateX = ((e.clientY - centerY) / (rect.height / 2)) * -3;
+            const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 3;
+            const shadowX = ((e.clientX - centerX) / (rect.width / 2)) * -20;
+            const shadowY = ((e.clientY - centerY) / (rect.height / 2)) * -20;
+            gsap.to(container, {
+              rotateX,
+              rotateY,
+              boxShadow: `${shadowX}px ${40 + shadowY}px 80px -20px rgba(35,15,60,0.8), 0 0 50px 8px rgba(90,30,120,0.4)`,
+              duration: 0.6,
+              ease: 'power3.out',
+              overwrite: 'auto',
+            });
+          };
 
-        card.addEventListener('mouseenter', () => {
-          gsap.to(img, { scale: 1.03, duration: 1.2, ease: 'power2.out' });
-          card.addEventListener('mousemove', handleMouseMove);
-        });
-
-        card.addEventListener('mouseleave', () => {
-          card.removeEventListener('mousemove', handleMouseMove);
-          gsap.to(container, {
-            rotateX: 0,
-            rotateY: 0,
-            boxShadow: '0 40px 80px -20px rgba(10,5,25,1), 0 0 20px 2px rgba(150,40,20,0.15)',
-            duration: 1.2,
-            ease: 'elastic.out(1, 0.4)',
+          card.addEventListener('mouseenter', () => {
+            gsap.to(img, { scale: 1.03, duration: 1.2, ease: 'power2.out' });
+            card.addEventListener('mousemove', handleMouseMove);
           });
-          gsap.to(img, { scale: 1, duration: 1.2, ease: 'power2.out' });
-        });
+
+          card.addEventListener('mouseleave', () => {
+            card.removeEventListener('mousemove', handleMouseMove);
+            gsap.to(container, {
+              rotateX: 0,
+              rotateY: 0,
+              boxShadow: '0 40px 80px -20px rgba(35,15,60,0.8), 0 0 30px 2px rgba(90,30,120,0.2)',
+              duration: 1.2,
+              ease: 'elastic.out(1, 0.4)',
+            });
+            gsap.to(img, { scale: 1, duration: 1.2, ease: 'power2.out' });
+          });
+        }
       });
     },
     { scope: containerRef }
