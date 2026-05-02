@@ -134,17 +134,33 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
             </motion.div>
           </motion.div>
 
-          {/* Multi-image navigation dots — only rendered when artwork has multiple images */}
+          {/* Multi-image navigation — only rendered when artwork has multiple images */}
           {allImages.length > 1 && (
-            <div className="flex justify-center gap-3">
-              {allImages.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveIndex(idx)}
-                  className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${idx === activeIndex ? 'bg-parchment/70 scale-125' : 'bg-parchment/20 hover:bg-parchment/40'}`}
-                  aria-label={`View image ${idx + 1}`}
-                />
-              ))}
+            <div className="flex items-center justify-center gap-8 mt-1">
+              <button
+                onClick={() => setActiveIndex((i) => (i - 1 + allImages.length) % allImages.length)}
+                className="text-parchment/40 hover:text-vermillion font-sans text-[9px] tracking-[0.4em] uppercase transition-colors duration-500 min-h-[44px] flex items-center px-2"
+                aria-label="Previous image"
+              >
+                [ ← ]
+              </button>
+              <div className="flex gap-3 items-center">
+                {allImages.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveIndex(idx)}
+                    className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${idx === activeIndex ? 'bg-parchment/70 scale-125' : 'bg-parchment/20 hover:bg-parchment/40'}`}
+                    aria-label={`View image ${idx + 1}`}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={() => setActiveIndex((i) => (i + 1) % allImages.length)}
+                className="text-parchment/40 hover:text-vermillion font-sans text-[9px] tracking-[0.4em] uppercase transition-colors duration-500 min-h-[44px] flex items-center px-2"
+                aria-label="Next image"
+              >
+                [ → ]
+              </button>
             </div>
           )}
         </div>
