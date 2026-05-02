@@ -18,7 +18,7 @@ export default function Home() {
         >[ The Artist ]
         </Link>
         <a 
-          href="mailto:studio@camillewiseman.art" 
+          href="mailto:studio@akifunada.art"
           className="text-parchment/50 hover:text-vermillion font-sans text-[10px] tracking-[0.4em] uppercase transition-colors duration-500 py-3 min-h-[44px] flex items-center"
         >
           [ Studio ]

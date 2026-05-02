@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useUiStore } from '@/store/useUiStore';
 import { useHapticSound } from '@/hooks/useHapticSound';
@@ -13,6 +14,8 @@ interface Artwork {
   colors: string[];
   dimensions: string;
   medium: string;
+  image: string;
+  images?: string[];
 }
 
 export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
@@ -35,6 +38,9 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
   useEffect(() => {
     setHasHover(window.matchMedia('(hover: hover)').matches);
   }, []);
+
+  const allImages = artwork.images && artwork.images.length > 1 ? artwork.images : [artwork.image];
+  const [activeIndex, setActiveIndex] = useState(0);
 
   // --- DEPTH TRICK 2: INTERACTIVE VARNISH SHEEN (hover devices only; touch = static center) ---
   const mouseX = useMotionValue(0.5);
@@ -91,43 +97,54 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         />
 
-        <motion.div
-          layoutId={`artwork-container-${artwork.id}`}
-          onMouseMove={hasHover ? handleMouseMove : undefined}
-          className="relative w-full aspect-[4/5] md:aspect-auto md:h-[80vh] bg-void/50 overflow-hidden mt-8 md:mt-0 z-10"
-          style={{ boxShadow: '0 40px 80px -20px rgba(35,15,60,0.8), 0 0 30px 2px rgba(90,30,120,0.2)' }}
-        >
-          {/* Microscopic noise overlay to dither Dioxazine shadow banding */}
-          <div className="absolute inset-0 z-[5] pointer-events-none opacity-[0.015] bg-noise mix-blend-overlay" aria-hidden />
+        <div className="relative w-full flex flex-col gap-4 mt-8 md:mt-0 z-10">
           <motion.div
-            layoutId={`artwork-image-${artwork.id}`}
-            className="absolute inset-0 w-full h-full transition-transform duration-[1200ms] hover:scale-[1.02] lux-ease"
+            layoutId={`artwork-container-${artwork.id}`}
+            onMouseMove={hasHover ? handleMouseMove : undefined}
+            className="relative w-full aspect-[4/5] md:aspect-auto md:h-[80vh] bg-void/50 overflow-hidden"
+            style={{ boxShadow: '0 40px 80px -20px rgba(35,15,60,0.8), 0 0 30px 2px rgba(90,30,120,0.2)' }}
           >
-            {artwork.colors.map((color, idx) => (
-              <div
-                key={idx}
-                className="absolute shadow-[0_0_40px_rgba(35,15,60,0.6)] mix-blend-screen"
+            {/* Microscopic noise overlay to dither Dioxazine shadow banding */}
+            <div className="absolute inset-0 z-[5] pointer-events-none opacity-[0.015] bg-noise mix-blend-overlay" aria-hidden />
+            <motion.div
+              layoutId={`artwork-image-${artwork.id}`}
+              className="absolute inset-0 w-full h-full transition-transform duration-[1200ms] hover:scale-[1.02] lux-ease"
+            >
+              <Image
+                src={allImages[activeIndex]}
+                alt={artwork.title}
+                fill
+                className="object-cover"
+                priority
+              />
+
+              {/* THE VARNISH SHEEN OVERLAY (interactive on hover; static center on touch) */}
+              <motion.div
+                className="absolute inset-0 z-20 pointer-events-none mix-blend-overlay opacity-30 will-change-transform"
                 style={{
-                  backgroundColor: color,
-                  inset: `${idx * 15}%`,
-                  opacity: 0.9,
-                  mixBlendMode: idx > 0 ? 'overlay' : 'normal'
+                  background: 'radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, transparent 50%)',
+                  x: glareX,
+                  y: glareY,
+                  scale: 2
                 }}
               />
-            ))}
-
-            {/* THE VARNISH SHEEN OVERLAY (interactive on hover; static center on touch) */}
-            <motion.div
-              className="absolute inset-0 z-20 pointer-events-none mix-blend-overlay opacity-30 will-change-transform"
-              style={{
-                background: 'radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, transparent 50%)',
-                x: glareX,
-                y: glareY,
-                scale: 2
-              }}
-            />
+            </motion.div>
           </motion.div>
-        </motion.div>
+
+          {/* Multi-image navigation dots — only rendered when artwork has multiple images */}
+          {allImages.length > 1 && (
+            <div className="flex justify-center gap-3">
+              {allImages.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveIndex(idx)}
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${idx === activeIndex ? 'bg-parchment/70 scale-125' : 'bg-parchment/20 hover:bg-parchment/40'}`}
+                  aria-label={`View image ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* RIGHT COLUMN - METADATA */}
@@ -155,11 +172,9 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
 
         <motion.div variants={textItemVariants} className="flex flex-col gap-6 text-parchment/70 font-sans font-light leading-relaxed max-w-md italic">
           <p>
-            &quot;This piece explores the liminal space between masstone and transparency.
-            The intentional application of Dioxazine Violet creates a structural void
-            where light doesn&apos;t just bounce, but seems to be absorbed into the fiber.&quot;
+            &quot;Every piece in this collection began somewhere else. Aki gave it a second life.&quot;
           </p>
-          <p className="text-parchment/30 not-italic">— Camille Wiseman, Artist Notes</p>
+          <p className="text-parchment/30 not-italic">— Aki Funada</p>
         </motion.div>
 
         <motion.button
@@ -167,7 +182,7 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
           className="self-start mt-8 px-8 py-4 min-h-[48px] border border-vermillion text-vermillion font-sans text-xs tracking-[0.4em] uppercase hover:bg-vermillion hover:text-void transition-all duration-700 relative overflow-hidden group"
         >
           <span className="absolute inset-0 bg-vermillion translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.22,1,0.36,1] -z-10" />
-          Inquire for Acquisition
+          Enquire About This Piece
         </motion.button>
       </motion.div>
     </div>

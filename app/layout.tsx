@@ -26,8 +26,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Camille Wiseman | Fine Art Gallery',
-  description: 'An immersive, cinematic headless e-commerce experience for fine artist Camille Wiseman.',
+  title: 'Aki Funada | Collection',
+  description: 'An immersive, cinematic headless e-commerce experience for textile artist Aki Funada.',
 };
 
 export const viewport = {

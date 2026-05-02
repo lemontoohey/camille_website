@@ -1,56 +1,122 @@
 [
   {
-    "id": "artwork-1",
-    "title": "Midnight Void",
-    "imagePath": "/placeholders/artwork-1.jpg",
-    "colors": ["#0a0010", "#3a0ca3", "#7209b7"],
-    "price": "$5,200",
-    "dimensions": "24 x 36 in",
-    "medium": "Layered Pigment and Resin"
+    "id": "01",
+    "title": "Gray Top",
+    "price": "Enquire",
+    "colors": ["#8a8a82", "#c8c4b0"],
+    "dimensions": "One size",
+    "medium": "Altered cotton",
+    "imagePath": "/images/01_gray_top_hero.jpg",
+    "image": "/images/01_gray_top_hero.jpg"
   },
   {
-    "id": "artwork-2",
-    "title": "Quinacridone Study",
-    "imagePath": "/placeholders/artwork-1.jpg",
-    "colors": ["#f72585", "#b5179e", "#4cc9f0"],
-    "price": "$3,400",
-    "dimensions": "18 x 24 in",
-    "medium": "Layered Pigment and Resin"
+    "id": "02",
+    "title": "Blue Shirt",
+    "price": "Enquire",
+    "colors": ["#7a9aaa", "#c8dde0"],
+    "dimensions": "One size",
+    "medium": "Altered linen",
+    "imagePath": "/images/02_blue_shirt_hero.jpg",
+    "image": "/images/02_blue_shirt_hero.jpg"
   },
   {
-    "id": "artwork-3",
-    "title": "Phthalo Depths",
-    "imagePath": "/placeholders/artwork-1.jpg",
-    "colors": ["#00b4d8", "#0077b6", "#03045e"],
-    "price": "$6,800",
-    "dimensions": "48 x 60 in",
-    "medium": "Layered Pigment and Resin"
+    "id": "03",
+    "title": "Denim Jacket",
+    "price": "Enquire",
+    "colors": ["#4a5e7a", "#2c3d5a"],
+    "dimensions": "One size",
+    "medium": "Altered denim",
+    "imagePath": "/images/03_denim_jacket.jpg",
+    "image": "/images/03_denim_jacket.jpg"
   },
   {
-    "id": "artwork-4",
-    "title": "Ochre Horizon",
-    "imagePath": "/placeholders/artwork-1.jpg",
-    "colors": ["#ffb703", "#fb8500", "#023047"],
-    "price": "$4,100",
-    "dimensions": "30 x 40 in",
-    "medium": "Layered Pigment and Resin"
+    "id": "04",
+    "title": "Denim — Detail",
+    "price": "Enquire",
+    "colors": ["#3a4a60", "#6a7a8a"],
+    "dimensions": "One size",
+    "medium": "Altered denim",
+    "imagePath": "/images/04_denim_detail.jpg",
+    "image": "/images/04_denim_detail.jpg"
   },
   {
-    "id": "artwork-5",
-    "title": "Titanium Shift",
-    "imagePath": "/placeholders/artwork-1.jpg",
-    "colors": ["#e5e5e5", "#b0c4b1", "#4a5759"],
-    "price": "$2,900",
-    "dimensions": "16 x 20 in",
-    "medium": "Layered Pigment and Resin"
+    "id": "05",
+    "title": "Navy Jacket",
+    "price": "Enquire",
+    "colors": ["#1a2a4a", "#2a3a60"],
+    "dimensions": "One size",
+    "medium": "Altered cotton twill",
+    "imagePath": "/images/05_navy_jacket.jpg",
+    "image": "/images/05_navy_jacket.jpg"
   },
   {
-    "id": "artwork-6",
-    "title": "Cadmium Resonance",
-    "imagePath": "/placeholders/artwork-1.jpg",
-    "colors": ["#d00000", "#dc2f02", "#f48c06"],
-    "price": "$8,500",
-    "dimensions": "60 x 72 in",
-    "medium": "Layered Pigment and Resin"
+    "id": "06",
+    "title": "Khaki Shorts",
+    "price": "Enquire",
+    "colors": ["#b0a882", "#d4c89a"],
+    "dimensions": "One size",
+    "medium": "Altered cotton",
+    "imagePath": "/images/06_khaki_shorts.jpg",
+    "image": "/images/06_khaki_shorts.jpg"
+  },
+  {
+    "id": "07",
+    "title": "Khaki — Texture",
+    "price": "Enquire",
+    "colors": ["#9a9070", "#c0b890"],
+    "dimensions": "One size",
+    "medium": "Altered cotton",
+    "imagePath": "/images/07_khaki_texture.jpg",
+    "image": "/images/07_khaki_texture.jpg"
+  },
+  {
+    "id": "08",
+    "title": "Blush Top",
+    "price": "Enquire",
+    "colors": ["#e8a898", "#e8c8bc"],
+    "dimensions": "One size",
+    "medium": "Altered cotton",
+    "imagePath": "/images/08_blush_top_hero.jpg",
+    "image": "/images/08_blush_top_hero.jpg"
+  },
+  {
+    "id": "09",
+    "title": "Batik Top",
+    "price": "Enquire",
+    "colors": ["#2a6a5a", "#c47a3a"],
+    "dimensions": "One size",
+    "medium": "Hand-altered batik cotton",
+    "imagePath": "/images/09_batik_top_hero.jpg",
+    "image": "/images/09_batik_top_hero.jpg"
+  },
+  {
+    "id": "10",
+    "title": "Batik — Garden",
+    "price": "Enquire",
+    "colors": ["#3a7a5a", "#b86a2a"],
+    "dimensions": "One size",
+    "medium": "Hand-altered batik cotton",
+    "imagePath": "/images/10_batik_garden_hero.jpg",
+    "image": "/images/10_batik_garden_hero.jpg"
+  },
+  {
+    "id": "11",
+    "title": "Batik Pants",
+    "price": "Enquire",
+    "colors": ["#4a6a8a", "#8a5a3a"],
+    "dimensions": "One size",
+    "medium": "Hand-altered batik cotton",
+    "imagePath": "/images/11_batik_pants.jpg",
+    "image": "/images/11_batik_pants.jpg"
+  },
+  {
+    "id": "12",
+    "title": "Batik Set",
+    "price": "Enquire",
+    "colors": ["#3a5a7a", "#9a6a4a"],
+    "dimensions": "One size",
+    "medium": "Hand-altered batik cotton",
+    "imagePath": "/images/12_batik_set.jpg",
+    "image": "/images/12_batik_set.jpg"
   }
 ]
