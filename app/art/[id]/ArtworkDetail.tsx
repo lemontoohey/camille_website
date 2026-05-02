@@ -39,7 +39,10 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
     setHasHover(window.matchMedia('(hover: hover)').matches);
   }, []);
 
-  const allImages = artwork.images && artwork.images.length > 1 ? artwork.images : [artwork.image];
+  const rawImages = artwork.images && artwork.images.length > 1 ? artwork.images : [artwork.image];
+  const allImages = rawImages.map((p) =>
+    process.env.NODE_ENV === 'production' && !p.startsWith('http') ? `/camille_website${p}` : p
+  );
   const [activeIndex, setActiveIndex] = useState(0);
 
   // --- DEPTH TRICK 2: INTERACTIVE VARNISH SHEEN (hover devices only; touch = static center) ---
