@@ -162,15 +162,22 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
               layoutId={`artwork-image-${artwork.id}`}
               className="absolute inset-0 w-full h-full"
             >
-              {/* Artwork image — key-swapped on index change so new image mounts cleanly */}
-              <Image
-                key={activeIndex}
-                src={allImages[activeIndex]}
-                alt={artwork.title}
-                fill
-                className="object-cover transition-transform duration-[1200ms] hover:scale-[1.03]"
-                priority
-              />
+              {/* Artwork image — blur-to-sharp on each image mount, keyed so each new image unveils */}
+              <motion.div
+                key={`imgblur-${activeIndex}`}
+                className="absolute inset-0"
+                initial={{ filter: 'blur(8px)' }}
+                animate={{ filter: 'blur(0px)' }}
+                transition={{ duration: 2.0, delay: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
+              >
+                <Image
+                  src={allImages[activeIndex]}
+                  alt={artwork.title}
+                  fill
+                  className="object-cover transition-transform duration-[1200ms] hover:scale-[1.03]"
+                  priority
+                />
+              </motion.div>
 
               {/* ── Benzi reveal overlays (Task 6) ──────────────────────────
                   Re-keyed on activeIndex so each new image unveils itself,

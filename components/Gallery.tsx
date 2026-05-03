@@ -199,6 +199,8 @@ export const Gallery = () => {
           0
         );
 
+        tl.fromTo(img, { filter: 'blur(8px)' }, { filter: 'blur(0px)', ease: 'power2.out', duration: 1 }, 0);
+
         tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.8 }, 0.2);
 
         const hasHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches;
