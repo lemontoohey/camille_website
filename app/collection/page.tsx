@@ -1,7 +1,7 @@
 'use client';
 
-import { Gallery } from '@/components/Gallery';
 import Link from 'next/link';
+import { GridGallery } from '@/components/GridGallery';
 import { useUiStore } from '@/store/useUiStore';
 
 export default function CollectionPage() {
@@ -10,7 +10,7 @@ export default function CollectionPage() {
 
   return (
     <div className="w-full relative">
-      {/* Global Navigation Links - Fades out on scroll */}
+      {/* Global Navigation Links */}
       <nav className={`fixed top-12 right-6 md:right-12 z-50 flex flex-col gap-6 items-end transition-opacity duration-700 ${isScrolling ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}>
         <Link
           href="/about"
@@ -25,7 +25,7 @@ export default function CollectionPage() {
         </a>
       </nav>
 
-      <Gallery />
+      <GridGallery />
     </div>
   );
 }
