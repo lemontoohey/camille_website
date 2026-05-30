@@ -54,7 +54,7 @@ export function GatekeeperPage() {
         style={{
           position: 'fixed',
           inset: 0,
-          background: '#06000c',
+          background: 'transparent',
           overflow: 'hidden',
           zIndex: 0,
         }}
