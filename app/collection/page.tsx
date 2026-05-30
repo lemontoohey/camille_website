@@ -1,31 +1,45 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { GridGallery } from '@/components/GridGallery';
-import { useUiStore } from '@/store/useUiStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import { HorizontalGallery, Artwork } from '@/components/HorizontalGallery';
+import { ArtworkDetail } from '@/app/art/[id]/ArtworkDetail';
 
 export default function CollectionPage() {
-  const scrollVelocity = useUiStore((state) => state.scrollVelocity);
-  const isScrolling = Math.abs(scrollVelocity) > 2;
+  const [selected, setSelected] = useState<Artwork | null>(null);
 
   return (
     <div className="w-full relative">
-      {/* Global Navigation Links */}
-      <nav className={`fixed top-12 right-6 md:right-12 z-50 flex flex-col gap-6 items-end transition-opacity duration-700 ${isScrolling ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}>
-        <Link
-          href="/about"
-          className="text-parchment/50 hover:text-vermillion font-sans text-[10px] tracking-[0.4em] uppercase transition-colors duration-500 py-3 min-h-[44px] flex items-center"
-        >[ The Artist ]
+      <nav className="fixed top-12 right-6 md:right-12 z-50 flex gap-8 font-sans text-[10px] tracking-[0.3em] uppercase text-[#FDF5E6]/50">
+        <Link href="/about" className="hover:text-[#FDF5E6] transition-colors duration-500">
+          [ The Artist ]
         </Link>
-        <a
-          href="mailto:studio@akifunada.art"
-          className="text-parchment/50 hover:text-vermillion font-sans text-[10px] tracking-[0.4em] uppercase transition-colors duration-500 py-3 min-h-[44px] flex items-center"
-        >
+        <a href="mailto:studio@akifunada.art" className="hover:text-[#FDF5E6] transition-colors duration-500">
           [ Studio ]
         </a>
       </nav>
 
-      <GridGallery />
+      <HorizontalGallery onSelect={setSelected} />
+
+      <AnimatePresence>
+        {selected && (
+          <motion.div
+            key={selected.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 200 }}
+          >
+            <ArtworkDetail
+              artwork={selected}
+              onClose={() => setSelected(null)}
+              isActive={true}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,215 +1,256 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, ReactNode } from 'react';
-import { GalleryArrows } from './GalleryArrows';
-import ClothWave from './ClothWave';
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
+import artworksData from '@/src/data/artworks.json';
 
-interface HorizontalGalleryProps {
-  panels: ReactNode[];
-  panelImages?: string[];
-  onVelocity?: (velocity: number) => void;
-  onPanelChange?: (index: number) => void;
+export interface Artwork {
+  id: string;
+  title: string;
+  price: string;
+  imagePath: string;
+  image: string;
+  images?: string[];
+  colors: string[];
+  dimensions: string;
+  medium: string;
 }
 
-export function HorizontalGallery({
-  panels,
-  panelImages = [],
-  onVelocity,
-  onPanelChange,
-}: HorizontalGalleryProps) {
+export interface HorizontalGalleryProps {
+  onSelect: (artwork: Artwork) => void;
+}
+
+const artworks = artworksData as Artwork[];
+const total = artworks.length;
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const src = (p: string) =>
+  process.env.NODE_ENV === 'production' ? `/camille_website${p}` : p;
+
+export function HorizontalGallery({ onSelect }: HorizontalGalleryProps) {
   const trackRef = useRef<HTMLDivElement>(null);
-  const currentOffsetRef = useRef(0);
-  const targetOffsetRef = useRef(0);
+  const currentRef = useRef(0);
+  const targetRef = useRef(0);
   const rafRef = useRef<number>(0);
-  const touchStartXRef = useRef<number | null>(null);
-  const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartRef = useRef<number | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const clothWaveRef = useRef<{ trigger: (dir: 'left' | 'right') => void }>(null);
-  const totalPanels = panels.length;
 
-  const getMaxOffset = useCallback((): number => {
-    if (typeof window === 'undefined') return 0;
-    return Math.max(0, (totalPanels - 1) * window.innerWidth);
-  }, [totalPanels]);
+  const getMax = () =>
+    typeof window !== 'undefined' ? Math.max(0, (total - 1) * window.innerWidth) : 0;
 
-  const goToPanel = useCallback(
-    (index: number) => {
-      if (typeof window === 'undefined') return;
-      const clamped = Math.max(0, Math.min(index, totalPanels - 1));
-      const direction = clamped > currentIndex ? 'right' : 'left';
-      setIsTransitioning(true);
-      clothWaveRef.current?.trigger(direction);
-      setTimeout(() => setIsTransitioning(false), 400);
-      targetOffsetRef.current = clamped * window.innerWidth;
-    },
-    [totalPanels, currentIndex]
-  );
-
-  // Notify parent when panel index changes
-  useEffect(() => {
-    if (onPanelChange) onPanelChange(currentIndex);
-  }, [currentIndex, onPanelChange]);
-
-  // rAF lerp loop
+  // RAF lerp loop
   useEffect(() => {
     const tick = () => {
-      const prev = currentOffsetRef.current;
-      currentOffsetRef.current +=
-        (targetOffsetRef.current - currentOffsetRef.current) * 0.08;
-
+      currentRef.current += (targetRef.current - currentRef.current) * 0.08;
       if (trackRef.current) {
-        trackRef.current.style.transform = `translateX(${-currentOffsetRef.current}px)`;
+        trackRef.current.style.transform = `translateX(-${currentRef.current}px)`;
       }
-
-      const velocity = currentOffsetRef.current - prev;
-      if (onVelocity) onVelocity(velocity);
-
       const ww = typeof window !== 'undefined' ? Math.max(1, window.innerWidth) : 1;
-      const idx = Math.round(currentOffsetRef.current / ww);
+      const idx = Math.round(currentRef.current / ww);
       setCurrentIndex((p) => (p !== idx ? idx : p));
-
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [onVelocity]);
+  }, []);
 
-  // Wheel event — passive: false so we can preventDefault
+  // Wheel — deltaY drives horizontal scroll, passive:false to preventDefault
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      targetOffsetRef.current = Math.max(
+      targetRef.current = Math.max(
         0,
-        Math.min(targetOffsetRef.current + e.deltaY + e.deltaX, getMaxOffset())
+        Math.min(targetRef.current + (e.deltaY + e.deltaX) * 1.2, getMax())
       );
     };
     window.addEventListener('wheel', handleWheel, { passive: false });
     return () => window.removeEventListener('wheel', handleWheel);
-  }, [getMaxOffset]);
+  }, []);
 
-  // Touch handlers — accumulate delta from touchmove
+  // Touch swipe
   useEffect(() => {
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartXRef.current = e.touches[0].clientX;
+    const onStart = (e: TouchEvent) => {
+      touchStartRef.current = e.touches[0].clientX;
     };
-    const handleTouchMove = (e: TouchEvent) => {
-      if (touchStartXRef.current === null) return;
-      const delta = touchStartXRef.current - e.touches[0].clientX;
-      touchStartXRef.current = e.touches[0].clientX;
-      targetOffsetRef.current = Math.max(
-        0,
-        Math.min(targetOffsetRef.current + delta, getMaxOffset())
-      );
+    const onMove = (e: TouchEvent) => {
+      if (touchStartRef.current === null) return;
+      const delta = touchStartRef.current - e.touches[0].clientX;
+      touchStartRef.current = e.touches[0].clientX;
+      targetRef.current = Math.max(0, Math.min(targetRef.current + delta, getMax()));
     };
-    const handleTouchEnd = () => {
-      touchStartXRef.current = null;
-    };
-
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    const onEnd = () => { touchStartRef.current = null; };
+    window.addEventListener('touchstart', onStart, { passive: true });
+    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('touchend', onEnd, { passive: true });
     return () => {
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [getMaxOffset]);
-
-  // Keyboard navigation — snap to nearest panel boundary
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const ww = typeof window !== 'undefined' ? Math.max(1, window.innerWidth) : 1;
-      const currentTargetPanel = Math.round(targetOffsetRef.current / ww);
-      if (e.key === 'ArrowRight') goToPanel(currentTargetPanel + 1);
-      else if (e.key === 'ArrowLeft') goToPanel(currentTargetPanel - 1);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [goToPanel]);
-
-  // Body scroll lock while mounted
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
+      window.removeEventListener('touchstart', onStart);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onEnd);
     };
   }, []);
 
-  // Debounced resize handler — recalculate maxOffset and re-clamp
+  // Keyboard — relative step of 85% viewport width per press
   useEffect(() => {
-    const handleResize = () => {
-      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
-      resizeTimerRef.current = setTimeout(() => {
-        const newMax = getMaxOffset();
-        targetOffsetRef.current = Math.min(targetOffsetRef.current, newMax);
-      }, 150);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        targetRef.current = Math.min(targetRef.current + window.innerWidth * 0.85, getMax());
+      } else if (e.key === 'ArrowLeft') {
+        targetRef.current = Math.max(targetRef.current - window.innerWidth * 0.85, 0);
+      }
     };
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
-    };
-  }, [getMaxOffset]);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
-  // Adjacent image preload via <link rel="preload">
+  // Body scroll lock
   useEffect(() => {
-    if (!panelImages.length) return;
-    const toPreload = [
-      panelImages[currentIndex - 1],
-      panelImages[currentIndex + 1],
-    ].filter((s): s is string => Boolean(s));
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
 
-    toPreload.forEach((src) => {
-      if (document.querySelector(`link[rel="preload"][href="${src}"]`)) return;
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.as = 'image';
-      link.href = src;
-      document.head.appendChild(link);
-    });
-  }, [currentIndex, panelImages]);
+  // Snap to panel index (used by arrow buttons)
+  const goTo = (idx: number) => {
+    const clamped = Math.max(0, Math.min(idx, total - 1));
+    targetRef.current = clamped * (typeof window !== 'undefined' ? window.innerWidth : 0);
+  };
 
   return (
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
-      <ClothWave ref={clothWaveRef} />
+      {/* Scrolling track */}
       <div
         ref={trackRef}
-        data-wave-active={isTransitioning}
-        style={{
-          display: 'flex',
-          width: 'fit-content',
-          height: '100vh',
-          willChange: 'transform',
-          filter: isTransitioning ? 'url(#cloth-wave-filter)' : 'none',
-        }}
+        style={{ display: 'flex', width: 'fit-content', height: '100vh', willChange: 'transform' }}
       >
-        {panels.map((panel, i) => (
+        {artworks.map((artwork, idx) => (
           <div
-            key={i}
-            style={{
-              flex: '0 0 100vw',
-              height: '100vh',
-              position: 'relative',
-              overflow: 'hidden',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            key={artwork.id}
+            style={{ flex: '0 0 100vw', height: '100vh', position: 'relative' }}
           >
-            {panel}
+            {/* Centred column — image frame + caption, vertically and horizontally centred */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1.25rem',
+              }}
+            >
+              {/* Image frame — layoutId matches ArtworkDetail's artwork-container-* */}
+              <motion.div
+                layoutId={`artwork-container-${artwork.id}`}
+                onClick={() => onSelect(artwork)}
+                style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+                className="w-[82vw] h-[60vh] md:w-[42vw] md:h-[72vh]"
+              >
+                {/* Image layer — layoutId matches ArtworkDetail's artwork-image-* */}
+                <motion.div
+                  layoutId={`artwork-image-${artwork.id}`}
+                  style={{ position: 'absolute', inset: 0 }}
+                >
+                  <Image
+                    src={src(artwork.imagePath)}
+                    alt={artwork.title}
+                    fill
+                    style={{ objectFit: 'cover', objectPosition: 'center top' }}
+                    sizes="(max-width: 768px) 82vw, 42vw"
+                    priority={idx < 2}
+                  />
+                </motion.div>
+              </motion.div>
+
+              {/* Caption — below image, not overlapping */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  pointerEvents: 'none',
+                }}
+              >
+                <span
+                  className="font-serif tracking-[0.25em] text-[11px] uppercase"
+                  style={{ color: 'rgba(253,245,230,0.70)' }}
+                >
+                  {artwork.title}
+                </span>
+                <span
+                  className="font-serif tracking-[0.25em] text-[11px] uppercase"
+                  style={{ color: 'rgba(253,245,230,0.70)' }}
+                >
+                  {artwork.price}
+                </span>
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
-      <GalleryArrows
-        currentPanel={currentIndex}
-        totalPanels={totalPanels}
-        onPrev={() => goToPanel(currentIndex - 1)}
-        onNext={() => goToPanel(currentIndex + 1)}
-        onGoTo={goToPanel}
-      />
+      {/* Panel counter — fixed bottom-centre */}
+      <div
+        className="font-serif text-[10px]"
+        style={{
+          position: 'fixed',
+          bottom: '2rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          color: 'rgba(253,245,230,0.40)',
+          letterSpacing: '0.15em',
+          pointerEvents: 'none',
+        }}
+      >
+        {pad(currentIndex + 1)} / {pad(total)}
+      </div>
+
+      {/* Left arrow */}
+      <button
+        onClick={() => goTo(currentIndex - 1)}
+        aria-label="Previous artwork"
+        className="text-[#FDF5E6]/30 hover:text-[#FDF5E6]/80 transition-colors duration-300"
+        style={{
+          position: 'fixed',
+          left: '2rem',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'none',
+          border: 'none',
+          cursor: currentIndex === 0 ? 'default' : 'pointer',
+          padding: '1rem',
+          fontSize: '1.25rem',
+          opacity: currentIndex === 0 ? 0.15 : 1,
+          transition: 'opacity 300ms ease',
+        }}
+      >
+        ←
+      </button>
+
+      {/* Right arrow */}
+      <button
+        onClick={() => goTo(currentIndex + 1)}
+        aria-label="Next artwork"
+        className="text-[#FDF5E6]/30 hover:text-[#FDF5E6]/80 transition-colors duration-300"
+        style={{
+          position: 'fixed',
+          right: '2rem',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'none',
+          border: 'none',
+          cursor: currentIndex === total - 1 ? 'default' : 'pointer',
+          padding: '1rem',
+          fontSize: '1.25rem',
+          opacity: currentIndex === total - 1 ? 0.15 : 1,
+          transition: 'opacity 300ms ease',
+        }}
+      >
+        →
+      </button>
     </div>
   );
 }
