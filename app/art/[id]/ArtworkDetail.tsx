@@ -18,7 +18,7 @@ interface Artwork {
   images?: string[];
 }
 
-export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
+export function ArtworkDetail({ artwork, onClose }: { artwork: Artwork; onClose?: () => void }) {
   const router = useRouter();
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
   const { playArtworkAtmosphere, stopArtworkAtmosphere } = useHapticSound();
@@ -30,8 +30,12 @@ export function ArtworkDetail({ artwork }: { artwork: Artwork }) {
 
   const handleBack = () => {
     stopArtworkAtmosphere();
-    setIsTransitioning(true);
-    router.back();
+    if (onClose) {
+      onClose();
+    } else {
+      setIsTransitioning(true);
+      router.back();
+    }
   };
 
   const [hasHover, setHasHover] = useState(false);

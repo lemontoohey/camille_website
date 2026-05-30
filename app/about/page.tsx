@@ -1,43 +1,59 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger);
-}
 
 export default function AboutPage() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const quoteRefs = useRef<HTMLElement[]>([]);
 
+  // Portrait animation fires on mount — no ScrollTrigger dependency
   useGSAP(() => {
-    const quotes = gsap.utils.toArray<HTMLElement>('.artist-quote');
-    quotes.forEach((quote) => {
-      gsap.fromTo(quote,
-        { opacity: 0, y: 30 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 1.8,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: quote as gsap.DOMTarget,
-            start: 'top 80%',
-            once: true
-          }
-        }
-      );
-    });
-
     gsap.fromTo('.portrait-img',
       { scale: 1.05, opacity: 0 },
       { scale: 1, opacity: 1, duration: 2.5, ease: 'power2.out' }
     );
   }, { scope: containerRef });
+
+  // Artist quotes — IntersectionObserver replaces ScrollTrigger
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const quotes = Array.from(
+      containerRef.current.querySelectorAll<HTMLElement>('.artist-quote')
+    );
+    quoteRefs.current = quotes;
+
+    const observers: IntersectionObserver[] = [];
+
+    quotes.forEach((quote) => {
+      const obs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            gsap.fromTo(
+              entry.target,
+              { opacity: 0, y: 30 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 1.8,
+                ease: 'power3.out',
+              }
+            );
+            obs.disconnect();
+          });
+        },
+        { threshold: 0.15 }
+      );
+      obs.observe(quote);
+      observers.push(obs);
+    });
+
+    return () => observers.forEach((o) => o.disconnect());
+  }, []);
 
   return (
     <div ref={containerRef} className="min-h-screen bg-void pt-48 pb-64 px-6 md:px-12 flex flex-col items-center overflow-hidden">

@@ -1,30 +1,46 @@
 'use client';
 
-import { memo, useRef } from 'react';
-import Link from 'next/link';
+import { memo, useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useUiStore } from '@/store/useUiStore';
+import { HorizontalGallery } from './HorizontalGallery';
+import { ArtworkDetail } from '@/app/art/[id]/ArtworkDetail';
 import artworksData from '@/src/data/artworks.json';
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger);
-}
 
 interface Artwork {
   id: string;
   title: string;
   price: string;
   imagePath: string;
+  image: string;
+  images?: string[];
+  colors: string[];
   dimensions: string;
   medium: string;
 }
 
-const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: number }) => {
+interface CardProps {
+  artwork: Artwork;
+  index: number;
+  isActive: boolean;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+const PureArtworkCard = memo(({ artwork, index, isActive, isSelected, onSelect }: CardProps) => {
   const cardRef = useRef<HTMLElement>(null);
-  const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
+  const hasAnimated = useRef(false);
+
+  const imageSrc = artwork.imagePath
+    ? process.env.NODE_ENV === 'production' && !artwork.imagePath.startsWith('http')
+      ? `/camille_website${artwork.imagePath}`
+      : artwork.imagePath
+    : process.env.NODE_ENV === 'production'
+      ? '/camille_website/placeholders/artwork-1.jpg'
+      : '/placeholders/artwork-1.jpg';
 
   const getWidthClass = (i: number) => {
     const widths = ['md:max-w-xl', 'md:max-w-3xl', 'md:max-w-2xl', 'md:max-w-4xl'];
@@ -36,36 +52,169 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
     return alignments[i % alignments.length];
   };
 
-  const imageSrc = artwork.imagePath
-    ? process.env.NODE_ENV === 'production' && !artwork.imagePath.startsWith('http')
-      ? `/camille_website${artwork.imagePath}`
-      : artwork.imagePath
-    : process.env.NODE_ENV === 'production'
-      ? '/camille_website/placeholders/artwork-1.jpg'
-      : '/placeholders/artwork-1.jpg';
+  // Entrance animation — fires once when the panel becomes active
+  useGSAP(
+    () => {
+      if (!isActive || hasAnimated.current || !cardRef.current || isSelected) return;
+      hasAnimated.current = true;
+
+      const card = cardRef.current;
+      const container = card.querySelector('.card-container');
+      const imageWrapper = card.querySelector<HTMLElement>('.image-wrapper');
+      const img = card.querySelector<HTMLElement>('.artwork-image');
+      const benziColor = card.querySelector('.benzi-color');
+      const benziSolid = card.querySelector('.benzi-solid');
+      const benziGlaze = card.querySelector('.benzi-glaze');
+      const magentaLight = card.querySelector('.magenta-light');
+      const brownLight = card.querySelector('.brown-light');
+      const meta = card.querySelector('.meta-block');
+      const isDesktop =
+        typeof window !== 'undefined' && window.matchMedia('(min-width: 769px)').matches;
+
+      if (!imageWrapper || !img || !meta || !container) return;
+
+      const tl = gsap.timeline();
+
+      if (magentaLight) {
+        tl.to(magentaLight, { opacity: 0.08, scale: 1.05, duration: 0.3, ease: 'power1.inOut' }, 0)
+          .to(magentaLight, { opacity: 0, scale: 1.15, duration: 0.7, ease: 'power2.out' }, 0.3);
+      }
+      if (brownLight) {
+        tl.to(brownLight, { opacity: 0.3, scale: 1.02, duration: 0.5, ease: 'power2.inOut' }, 0)
+          .to(brownLight, { opacity: 0, scale: 1.03, duration: 0.5, ease: 'power2.inOut' }, 0.5);
+      }
+      if (benziColor && benziSolid && benziGlaze) {
+        tl.to([benziColor, benziSolid, benziGlaze], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
+      } else if (benziColor && benziSolid) {
+        tl.to([benziColor, benziSolid], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
+      }
+      if (isDesktop) {
+        tl.to(
+          container,
+          {
+            boxShadow:
+              '0 50px 100px -25px rgba(35,15,60,0.9), 0 0 50px 4px rgba(90,30,120,0.35)',
+            ease: 'power2.inOut',
+            duration: 1,
+          },
+          0
+        );
+      }
+
+      tl.fromTo(
+        imageWrapper,
+        { scale: 1.15, yPercent: -3 },
+        { scale: 1.05, yPercent: 3, ease: 'power2.out', duration: 1 },
+        0
+      );
+
+      tl.fromTo(img, { filter: 'blur(8px)' }, { filter: 'blur(0px)', ease: 'power2.out', duration: 1 }, 0);
+
+      tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.8 }, 0.2);
+    },
+    { dependencies: [isActive, isSelected], scope: cardRef }
+  );
+
+  // Mouse hover 3D tilt + image scale
+  useGSAP(
+    () => {
+      if (!cardRef.current) return;
+      const card = cardRef.current;
+      const container = card.querySelector('.card-container');
+      const img = card.querySelector<HTMLElement>('.artwork-image');
+      const hasHover =
+        typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches;
+
+      if (!container || !img || !hasHover) return;
+
+      const handleMouseMove = (e: MouseEvent) => {
+        const rect = card.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const rotateX = ((e.clientY - centerY) / (rect.height / 2)) * -3;
+        const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 3;
+        const shadowX = ((e.clientX - centerX) / (rect.width / 2)) * -20;
+        const shadowY = ((e.clientY - centerY) / (rect.height / 2)) * -20;
+        gsap.to(container, {
+          rotateX,
+          rotateY,
+          boxShadow: `${shadowX}px ${40 + shadowY}px 80px -20px rgba(35,15,60,0.8), 0 0 50px 8px rgba(90,30,120,0.4)`,
+          duration: 0.6,
+          ease: 'power3.out',
+          overwrite: 'auto',
+        });
+      };
+
+      const onEnter = () => {
+        gsap.to(img, { scale: 1.03, duration: 1.2, ease: 'power2.out' });
+        card.addEventListener('mousemove', handleMouseMove);
+      };
+
+      const onLeave = () => {
+        card.removeEventListener('mousemove', handleMouseMove);
+        gsap.to(container, {
+          rotateX: 0,
+          rotateY: 0,
+          boxShadow: '0 40px 80px -20px rgba(35,15,60,0.8), 0 0 30px 2px rgba(90,30,120,0.2)',
+          duration: 1.2,
+          ease: 'elastic.out(1, 0.4)',
+        });
+        gsap.to(img, { scale: 1, duration: 1.2, ease: 'power2.out' });
+      };
+
+      card.addEventListener('mouseenter', onEnter);
+      card.addEventListener('mouseleave', onLeave);
+
+      return () => {
+        card.removeEventListener('mouseenter', onEnter);
+        card.removeEventListener('mouseleave', onLeave);
+        card.removeEventListener('mousemove', handleMouseMove);
+      };
+    },
+    { scope: cardRef }
+  );
+
+  if (isSelected) {
+    return <div style={{ width: '100%', height: '100%' }} />;
+  }
 
   return (
     <article
       ref={cardRef}
       className={`artwork-card relative group flex flex-col gap-8 w-full perspective-[2000px] ${getAlignmentClass(index)} ${getWidthClass(index)}`}
     >
-      <Link
-        href={`/art/${artwork.id}`}
-        onClick={() => setIsTransitioning(true)}
+      <div
         className="block w-full cursor-pointer"
+        onClick={onSelect}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') onSelect();
+        }}
       >
-        <div
+        <motion.div
+          layoutId={`artwork-container-${artwork.id}`}
           className="card-container relative w-full aspect-[4/5] bg-void [transform-style:preserve-3d] will-change-transform overflow-hidden rounded-sm [contain:paint]"
           style={{
             boxShadow: '0 40px 80px -20px rgba(35,15,60,0.8), 0 0 30px 2px rgba(90,30,120,0.2)',
           }}
         >
           {/* Soft vignette: inset magenta/violet hugs frame, no mix-blend clipping */}
-          <div className="absolute inset-0 pointer-events-none rounded-sm" style={{ boxShadow: 'inset 0 0 60px 10px rgba(107, 0, 56, 0.15)' }} aria-hidden />
+          <div
+            className="absolute inset-0 pointer-events-none rounded-sm"
+            style={{ boxShadow: 'inset 0 0 60px 10px rgba(107, 0, 56, 0.15)' }}
+            aria-hidden
+          />
           {/* Microscopic noise overlay to dither Dioxazine shadow banding */}
-          <div className="absolute inset-0 z-[5] pointer-events-none opacity-[0.015] bg-noise mix-blend-overlay" aria-hidden />
+          <div
+            className="absolute inset-0 z-[5] pointer-events-none opacity-[0.015] bg-noise mix-blend-overlay"
+            aria-hidden
+          />
           {/* Physical canvas surface: image + glazes move/scale as one locked object */}
-          <div className="image-wrapper absolute inset-0 overflow-hidden will-change-transform">
+          <motion.div
+            layoutId={`artwork-image-${artwork.id}`}
+            className="image-wrapper absolute inset-0 overflow-hidden will-change-transform"
+          >
             <Image
               src={imageSrc}
               alt={artwork.title}
@@ -79,9 +228,9 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
             <div className="benzi-glaze absolute inset-0 bg-[#8b3d2a] mix-blend-color opacity-[0.5] z-10 pointer-events-none will-change-opacity md:backdrop-brightness-[1.15] md:backdrop-contrast-[1.05]" />
             <div className="magenta-light absolute inset-0 bg-magenta mix-blend-screen opacity-0 blur-[40px] md:blur-[60px] scale-90 z-20 pointer-events-none will-change-transform" />
             <div className="brown-light absolute inset-0 bg-[#c85a42] mix-blend-screen opacity-0 blur-[50px] md:blur-[80px] scale-90 z-20 pointer-events-none will-change-transform" />
-          </div>
-        </div>
-      </Link>
+          </motion.div>
+        </motion.div>
+      </div>
 
       <div className="meta-block flex flex-col gap-3 px-2 sm:px-0 opacity-0 translate-y-8 will-change-transform">
         <div className="flex flex-row justify-between items-baseline gap-8">
@@ -101,8 +250,12 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <p className="text-parchment/40 font-sans text-xs font-light tracking-wider uppercase">{artwork.medium}</p>
-          <p className="text-parchment/40 font-sans text-xs font-light tracking-wider">{artwork.dimensions}</p>
+          <p className="text-parchment/40 font-sans text-xs font-light tracking-wider uppercase">
+            {artwork.medium}
+          </p>
+          <p className="text-parchment/40 font-sans text-xs font-light tracking-wider">
+            {artwork.dimensions}
+          </p>
         </div>
       </div>
     </article>
@@ -112,141 +265,93 @@ const PureArtworkCard = memo(({ artwork, index }: { artwork: Artwork; index: num
 PureArtworkCard.displayName = 'PureArtworkCard';
 
 export const Gallery = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
   const setCanvasPaused = useUiStore((state) => state.setCanvasPaused);
   const scrollVelocity = useUiStore((state) => state.scrollVelocity);
   const isScrolling = Math.abs(scrollVelocity) > 2;
 
-  useGSAP(
-    () => {
-      let proxy = { skew: 0 };
-      const skewSetter = gsap.quickSetter('.artwork-card', 'skewY', 'deg');
+  const [currentPanelIndex, setCurrentPanelIndex] = useState(0);
+  const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
 
-      ScrollTrigger.create({
-        trigger: containerRef.current,
-        start: 'top bottom',
-        end: 'bottom top',
-        onEnter: () => setCanvasPaused(false),
-        onLeave: () => setCanvasPaused(true),
-        onEnterBack: () => setCanvasPaused(false),
-        onLeaveBack: () => setCanvasPaused(true),
-        onUpdate: (self) => {
-          const skewAmount = gsap.utils.clamp(-1.5, 1.5, self.getVelocity() / -800);
-          if (Math.abs(skewAmount) > Math.abs(proxy.skew)) {
-            proxy.skew = skewAmount;
-            gsap.to(proxy, {
-              skew: 0,
-              duration: 1.2,
-              ease: 'elastic.out(1, 0.3)',
-              onUpdate: () => skewSetter(proxy.skew),
-            });
-          }
+  const skewSetterRef = useRef<((value: number) => void) | null>(null);
+  const skewProxyRef = useRef({ skew: 0 });
+
+  useEffect(() => {
+    setCanvasPaused(false);
+    return () => setCanvasPaused(true);
+  }, [setCanvasPaused]);
+
+  useEffect(() => {
+    skewSetterRef.current = gsap.quickSetter(
+      '.artwork-card',
+      'skewX',
+      'deg'
+    ) as (value: number) => void;
+  }, []);
+
+  const handleVelocity = useCallback((velocity: number) => {
+    if (!skewSetterRef.current) return;
+    const skewAmount = gsap.utils.clamp(-1.5, 1.5, velocity * -0.15);
+    const proxy = skewProxyRef.current;
+    if (Math.abs(skewAmount) > Math.abs(proxy.skew)) {
+      proxy.skew = skewAmount;
+      gsap.to(proxy, {
+        skew: 0,
+        duration: 1.2,
+        ease: 'elastic.out(1, 0.3)',
+        onUpdate: () => {
+          if (skewSetterRef.current) skewSetterRef.current(proxy.skew);
         },
       });
+    }
+  }, []);
 
-      const cards = gsap.utils.toArray<HTMLElement>('.artwork-card');
+  const handleSelectArtwork = useCallback((id: string) => {
+    setSelectedArtworkId(id);
+  }, []);
 
-      cards.forEach((card) => {
-        const container = card.querySelector('.card-container');
-        const imageWrapper = card.querySelector<HTMLElement>('.image-wrapper');
-        const img = card.querySelector<HTMLElement>('.artwork-image');
-        const benziColor = card.querySelector('.benzi-color');
-        const benziSolid = card.querySelector('.benzi-solid');
-        const benziGlaze = card.querySelector('.benzi-glaze');
-        const magentaLight = card.querySelector('.magenta-light');
-        const brownLight = card.querySelector('.brown-light');
-        const meta = card.querySelector('.meta-block');
-        const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 769px)').matches;
+  const handleCloseArtwork = useCallback(() => {
+    setSelectedArtworkId(null);
+  }, []);
 
-        if (!imageWrapper || !img || !meta || !container) return;
+  const panelImages = useMemo(
+    () =>
+      (artworksData as Artwork[]).map((a) =>
+        process.env.NODE_ENV === 'production' && !a.imagePath.startsWith('http')
+          ? `/camille_website${a.imagePath}`
+          : a.imagePath
+      ),
+    []
+  );
 
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: card,
-            start: 'top 85%',
-            end: 'center 45%',
-            scrub: 1.2,
-          },
-        });
+  const selectedArtwork = useMemo(
+    () =>
+      selectedArtworkId
+        ? (artworksData as Artwork[]).find((a) => a.id === selectedArtworkId) ?? null
+        : null,
+    [selectedArtworkId]
+  );
 
-        if (magentaLight) {
-          tl.to(magentaLight, { opacity: 0.08, scale: 1.05, duration: 0.3, ease: 'power1.inOut' }, 0)
-            .to(magentaLight, { opacity: 0, scale: 1.15, duration: 0.7, ease: 'power2.out' }, 0.3);
-        }
-        if (brownLight) {
-          tl.to(brownLight, { opacity: 0.3, scale: 1.02, duration: 0.5, ease: 'power2.inOut' }, 0)
-            .to(brownLight, { opacity: 0, scale: 1.03, duration: 0.5, ease: 'power2.inOut' }, 0.5);
-        }
-        if (benziColor && benziSolid && benziGlaze) {
-          tl.to([benziColor, benziSolid, benziGlaze], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
-        } else if (benziColor && benziSolid) {
-          tl.to([benziColor, benziSolid], { opacity: 0, ease: 'power2.inOut', duration: 1 }, 0);
-        }
-        // Dioxazine shadow expansion: brown light pushes violet shadow deeper (desktop only; mobile = static)
-        if (isDesktop) {
-          tl.to(container, {
-            boxShadow: '0 50px 100px -25px rgba(35,15,60,0.9), 0 0 50px 4px rgba(90,30,120,0.35)',
-            ease: 'power2.inOut',
-            duration: 1,
-          }, 0);
-        }
-
-        // Physical canvas: wrapper (image + glazes) moves/scale as one; edges always bleed past frame
-        tl.fromTo(
-          imageWrapper,
-          { scale: 1.15, yPercent: -3 },
-          { scale: 1.05, yPercent: 3, ease: 'power2.out', duration: 1 },
-          0
-        );
-
-        tl.fromTo(img, { filter: 'blur(8px)' }, { filter: 'blur(0px)', ease: 'power2.out', duration: 1 }, 0);
-
-        tl.to(meta, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.8 }, 0.2);
-
-        const hasHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches;
-        if (hasHover) {
-          const handleMouseMove = (e: MouseEvent) => {
-            const rect = card.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            const rotateX = ((e.clientY - centerY) / (rect.height / 2)) * -3;
-            const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 3;
-            const shadowX = ((e.clientX - centerX) / (rect.width / 2)) * -20;
-            const shadowY = ((e.clientY - centerY) / (rect.height / 2)) * -20;
-            gsap.to(container, {
-              rotateX,
-              rotateY,
-              boxShadow: `${shadowX}px ${40 + shadowY}px 80px -20px rgba(35,15,60,0.8), 0 0 50px 8px rgba(90,30,120,0.4)`,
-              duration: 0.6,
-              ease: 'power3.out',
-              overwrite: 'auto',
-            });
-          };
-
-          card.addEventListener('mouseenter', () => {
-            gsap.to(img, { scale: 1.03, duration: 1.2, ease: 'power2.out' });
-            card.addEventListener('mousemove', handleMouseMove);
-          });
-
-          card.addEventListener('mouseleave', () => {
-            card.removeEventListener('mousemove', handleMouseMove);
-            gsap.to(container, {
-              rotateX: 0,
-              rotateY: 0,
-              boxShadow: '0 40px 80px -20px rgba(35,15,60,0.8), 0 0 30px 2px rgba(90,30,120,0.2)',
-              duration: 1.2,
-              ease: 'elastic.out(1, 0.4)',
-            });
-            gsap.to(img, { scale: 1, duration: 1.2, ease: 'power2.out' });
-          });
-        }
-      });
-    },
-    { scope: containerRef }
+  const panels = useMemo(
+    () =>
+      (artworksData as Artwork[]).map((artwork, idx) => (
+        <div
+          key={artwork.id}
+          style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}
+        >
+          <PureArtworkCard
+            artwork={artwork}
+            index={idx}
+            isActive={idx === currentPanelIndex}
+            isSelected={artwork.id === selectedArtworkId}
+            onSelect={() => handleSelectArtwork(artwork.id)}
+          />
+        </div>
+      )),
+    [currentPanelIndex, selectedArtworkId, handleSelectArtwork]
   );
 
   return (
-    <section ref={containerRef} className="relative w-full max-w-7xl mx-auto px-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))] sm:px-12 py-32 z-10 flex flex-col items-center">
+    <>
       <header
         className={`fixed top-1/3 left-4 md:left-8 z-50 transition-opacity duration-700 hidden md:block ${isScrolling ? 'opacity-0' : 'opacity-100 pointer-events-none'}`}
       >
@@ -255,17 +360,34 @@ export const Gallery = () => {
         </h1>
       </header>
       <header
-        className={`md:hidden w-full text-left mb-16 px-2 transition-opacity duration-700 ${isScrolling ? 'opacity-0' : 'opacity-100'}`}
+        className={`md:hidden fixed top-16 left-6 z-50 transition-opacity duration-700 pointer-events-none ${isScrolling ? 'opacity-0' : 'opacity-100'}`}
       >
         <h1 className="font-sans text-[10px] text-parchment tracking-[0.5em] uppercase opacity-40">
           Selected Works
         </h1>
       </header>
-      <div className="flex flex-col gap-y-48 md:gap-y-96 items-start w-full pb-48 mt-12">
-        {(artworksData as Artwork[]).map((artwork, idx) => (
-          <PureArtworkCard key={artwork.id} artwork={artwork} index={idx} />
-        ))}
-      </div>
-    </section>
+
+      <HorizontalGallery
+        panels={panels}
+        panelImages={panelImages}
+        onVelocity={handleVelocity}
+        onPanelChange={setCurrentPanelIndex}
+      />
+
+      <AnimatePresence>
+        {selectedArtwork && (
+          <motion.div
+            key={selectedArtwork.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 200 }}
+          >
+            <ArtworkDetail artwork={selectedArtwork} onClose={handleCloseArtwork} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
