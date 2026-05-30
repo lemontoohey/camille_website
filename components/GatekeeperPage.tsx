@@ -8,15 +8,6 @@ export function GatekeeperPage() {
   const router = useRouter();
   const [exiting, setExiting] = useState(false);
   const [contentVisible, setContentVisible] = useState(true);
-  const [bypassed, setBypassed] = useState(false);
-
-  // Skip gatekeeper if already visited this session
-  useEffect(() => {
-    if (sessionStorage.getItem('aki-entered')) {
-      setBypassed(true);
-      router.replace('/collection');
-    }
-  }, [router]);
 
   // Lock body/html scroll while gatekeeper is active
   useEffect(() => {
@@ -44,8 +35,6 @@ export function GatekeeperPage() {
     setExiting(true);
     setTimeout(() => router.push('/collection'), 1100);
   };
-
-  if (bypassed) return null;
 
   return (
     <AnimatePresence mode="wait">

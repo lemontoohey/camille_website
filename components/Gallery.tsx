@@ -1,26 +1,13 @@
 'use client';
 
-import { memo, useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import { memo, useRef, useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { useUiStore } from '@/store/useUiStore';
-import { HorizontalGallery } from './HorizontalGallery';
+import { HorizontalGallery, Artwork } from './HorizontalGallery';
 import { ArtworkDetail } from '@/app/art/[id]/ArtworkDetail';
-import artworksData from '@/src/data/artworks.json';
-
-interface Artwork {
-  id: string;
-  title: string;
-  price: string;
-  imagePath: string;
-  image: string;
-  images?: string[];
-  colors: string[];
-  dimensions: string;
-  medium: string;
-}
 
 interface CardProps {
   artwork: Artwork;
@@ -269,86 +256,20 @@ export const Gallery = () => {
   const scrollVelocity = useUiStore((state) => state.scrollVelocity);
   const isScrolling = Math.abs(scrollVelocity) > 2;
 
-  const [currentPanelIndex, setCurrentPanelIndex] = useState(0);
-  const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
-
-  const skewSetterRef = useRef<((value: number) => void) | null>(null);
-  const skewProxyRef = useRef({ skew: 0 });
+  const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
 
   useEffect(() => {
     setCanvasPaused(false);
     return () => setCanvasPaused(true);
   }, [setCanvasPaused]);
 
-  useEffect(() => {
-    skewSetterRef.current = gsap.quickSetter(
-      '.artwork-card',
-      'skewX',
-      'deg'
-    ) as (value: number) => void;
-  }, []);
-
-  const handleVelocity = useCallback((velocity: number) => {
-    if (!skewSetterRef.current) return;
-    const skewAmount = gsap.utils.clamp(-1.5, 1.5, velocity * -0.15);
-    const proxy = skewProxyRef.current;
-    if (Math.abs(skewAmount) > Math.abs(proxy.skew)) {
-      proxy.skew = skewAmount;
-      gsap.to(proxy, {
-        skew: 0,
-        duration: 1.2,
-        ease: 'elastic.out(1, 0.3)',
-        onUpdate: () => {
-          if (skewSetterRef.current) skewSetterRef.current(proxy.skew);
-        },
-      });
-    }
-  }, []);
-
-  const handleSelectArtwork = useCallback((id: string) => {
-    setSelectedArtworkId(id);
+  const handleSelectArtwork = useCallback((artwork: Artwork) => {
+    setSelectedArtwork(artwork);
   }, []);
 
   const handleCloseArtwork = useCallback(() => {
-    setSelectedArtworkId(null);
+    setSelectedArtwork(null);
   }, []);
-
-  const panelImages = useMemo(
-    () =>
-      (artworksData as Artwork[]).map((a) =>
-        process.env.NODE_ENV === 'production' && !a.imagePath.startsWith('http')
-          ? `/camille_website${a.imagePath}`
-          : a.imagePath
-      ),
-    []
-  );
-
-  const selectedArtwork = useMemo(
-    () =>
-      selectedArtworkId
-        ? (artworksData as Artwork[]).find((a) => a.id === selectedArtworkId) ?? null
-        : null,
-    [selectedArtworkId]
-  );
-
-  const panels = useMemo(
-    () =>
-      (artworksData as Artwork[]).map((artwork, idx) => (
-        <div
-          key={artwork.id}
-          style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}
-        >
-          <PureArtworkCard
-            artwork={artwork}
-            index={idx}
-            isActive={idx === currentPanelIndex}
-            isSelected={artwork.id === selectedArtworkId}
-            onSelect={() => handleSelectArtwork(artwork.id)}
-          />
-        </div>
-      )),
-    [currentPanelIndex, selectedArtworkId, handleSelectArtwork]
-  );
 
   return (
     <>
@@ -367,12 +288,7 @@ export const Gallery = () => {
         </h1>
       </header>
 
-      <HorizontalGallery
-        panels={panels}
-        panelImages={panelImages}
-        onVelocity={handleVelocity}
-        onPanelChange={setCurrentPanelIndex}
-      />
+      <HorizontalGallery onSelect={handleSelectArtwork} />
 
       <AnimatePresence>
         {selectedArtwork && (
