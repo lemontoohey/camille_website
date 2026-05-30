@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, ReactNode } from 'react';
 import { GalleryArrows } from './GalleryArrows';
+import ClothWave from './ClothWave';
 
 interface HorizontalGalleryProps {
   panels: ReactNode[];
@@ -23,6 +24,8 @@ export function HorizontalGallery({
   const touchStartXRef = useRef<number | null>(null);
   const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const clothWaveRef = useRef<{ trigger: (dir: 'left' | 'right') => void }>(null);
   const totalPanels = panels.length;
 
   const getMaxOffset = useCallback((): number => {
@@ -34,9 +37,13 @@ export function HorizontalGallery({
     (index: number) => {
       if (typeof window === 'undefined') return;
       const clamped = Math.max(0, Math.min(index, totalPanels - 1));
+      const direction = clamped > currentIndex ? 'right' : 'left';
+      setIsTransitioning(true);
+      clothWaveRef.current?.trigger(direction);
+      setTimeout(() => setIsTransitioning(false), 400);
       targetOffsetRef.current = clamped * window.innerWidth;
     },
-    [totalPanels]
+    [totalPanels, currentIndex]
   );
 
   // Notify parent when panel index changes
@@ -166,13 +173,16 @@ export function HorizontalGallery({
 
   return (
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
+      <ClothWave ref={clothWaveRef} />
       <div
         ref={trackRef}
+        data-wave-active={isTransitioning}
         style={{
           display: 'flex',
           width: 'fit-content',
           height: '100vh',
           willChange: 'transform',
+          filter: isTransitioning ? 'url(#cloth-wave-filter)' : 'none',
         }}
       >
         {panels.map((panel, i) => (
