@@ -95,7 +95,7 @@ export default function AboutPage() {
           Aki Funada is a Japanese maker and textile artist based in the mountains of Costa Rica.
           She sources ethically, alters by hand, and gives every garment a second life.
         </p>
-        <Link href="/" className="mt-8 text-parchment/60 hover:text-parchment font-sans text-[10px] tracking-[0.5em] uppercase transition-colors duration-700 py-3 flex items-center justify-center">
+        <Link href="/collection" className="mt-8 text-parchment/60 hover:text-parchment font-sans text-[10px] tracking-[0.5em] uppercase transition-colors duration-700 py-3 flex items-center justify-center">
           [ Return to Collection ]
         </Link>
       </div>

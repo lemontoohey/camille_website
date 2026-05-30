@@ -18,7 +18,7 @@ export default function ShopPage() {
     <div className="w-full min-h-screen pt-32 pb-48">
       <nav className="fixed top-12 right-6 md:right-12 z-50">
         <Link
-          href="/"
+          href="/collection"
           className="text-parchment/50 hover:text-vermillion font-sans text-[10px] tracking-[0.4em] uppercase transition-colors duration-500"
         >
           [ Back to Collection ]
