@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import gsap from 'gsap';
 import { useUiStore } from '@/store/useUiStore';
 import { useHapticSound } from '@/hooks/useHapticSound';
 
@@ -18,7 +19,7 @@ interface Artwork {
   images?: string[];
 }
 
-export function ArtworkDetail({ artwork, onClose }: { artwork: Artwork; onClose?: () => void }) {
+export function ArtworkDetail({ artwork, onClose, isActive = true }: { artwork: Artwork; onClose?: () => void; isActive?: boolean }) {
   const router = useRouter();
   const setIsTransitioning = useUiStore((state) => state.setIsTransitioning);
   const { playArtworkAtmosphere, stopArtworkAtmosphere } = useHapticSound();
@@ -27,6 +28,26 @@ export function ArtworkDetail({ artwork, onClose }: { artwork: Artwork; onClose?
     playArtworkAtmosphere(artwork.colors);
     return () => stopArtworkAtmosphere();
   }, [artwork.colors, playArtworkAtmosphere, stopArtworkAtmosphere]);
+
+  const imageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!imageRef.current) return;
+    if (isActive) {
+      gsap.fromTo(imageRef.current,
+        { scale: 1 },
+        {
+          scale: 1.04,
+          duration: 20,
+          ease: 'none',
+          overwrite: true,
+        }
+      );
+    } else {
+      gsap.killTweensOf(imageRef.current);
+      gsap.set(imageRef.current, { scale: 1 });
+    }
+  }, [isActive]);
 
   const handleBack = () => {
     stopArtworkAtmosphere();
@@ -163,6 +184,7 @@ export function ArtworkDetail({ artwork, onClose }: { artwork: Artwork; onClose?
             <div className="absolute inset-0 z-[5] pointer-events-none opacity-[0.015] bg-noise mix-blend-overlay" aria-hidden />
 
             <motion.div
+              ref={imageRef}
               layoutId={`artwork-image-${artwork.id}`}
               className="absolute inset-0 w-full h-full"
             >
