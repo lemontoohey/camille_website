@@ -54,9 +54,8 @@ export function GatekeeperPage() {
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'transparent',
           overflow: 'hidden',
-          zIndex: 0,
+          zIndex: 10,
         }}
         animate={{ opacity: exiting ? 0 : 1 }}
         transition={{ duration: exiting ? 1.2 : 0, ease: [0.22, 1, 0.36, 1] }}
