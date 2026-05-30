@@ -129,7 +129,7 @@ export function ArtworkDetail({ artwork, onClose, isActive = true }: { artwork: 
 
   return (
     // bg-void removed so the CanvasBackground particles show through (Task 4)
-    <div className="min-h-screen w-full px-6 md:px-12 flex flex-col md:grid md:grid-cols-2 gap-8 md:gap-24 overflow-x-hidden pt-[max(6rem,env(safe-area-inset-top))] pb-[max(6rem,env(safe-area-inset-bottom))] md:pt-24 md:pb-24">
+    <div className="relative w-full min-h-screen md:h-screen md:overflow-hidden flex flex-col md:block gap-8 px-6 md:px-0 pt-[max(6rem,env(safe-area-inset-top))] pb-[max(6rem,env(safe-area-inset-bottom))] md:pt-0 md:pb-0">
 
       <button
         onClick={handleBack}
@@ -140,24 +140,24 @@ export function ArtworkDetail({ artwork, onClose, isActive = true }: { artwork: 
 
       {/* LEFT COLUMN — artwork frame */}
       {/* perspective wrapper enables the 3D tilt (Task 6) */}
-      <div className="relative flex items-center justify-center [perspective:2000px]">
+      <div className="relative [perspective:2000px] md:absolute md:inset-0">
 
         {/* Ambient wall cast — artwork-colour tinted (Task 5) */}
         <motion.div
-          className="absolute inset-0 z-0 pointer-events-none mix-blend-screen blur-[40px] md:blur-[60px] will-change-[transform,opacity]"
-          style={{ background: `radial-gradient(circle at 50% 50%, ${artwork.colors[0]}30 0%, transparent 60%)` }}
+          className="absolute z-0 pointer-events-none mix-blend-screen blur-[40px] md:blur-[60px] will-change-[transform,opacity]"
+          style={{ background: `radial-gradient(circle at 50% 50%, ${artwork.colors[0]}30 0%, transparent 60%)`, width: '60vw', height: '80vh', left: 'calc(50% - 30vw)', top: 'calc(50% - 40vh)' }}
           animate={{ scale: [1, 1.05, 1], opacity: [0.4, 0.7, 0.4] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         />
         {/* Secondary dioxazine-violet wall cast matching gallery purple glow (Task 5) */}
         <motion.div
-          className="absolute inset-0 z-0 pointer-events-none mix-blend-screen blur-[80px] md:blur-[100px] will-change-[transform,opacity]"
-          style={{ background: 'radial-gradient(circle at 50% 50%, rgba(90,30,120,0.18) 0%, transparent 65%)' }}
+          className="absolute z-0 pointer-events-none mix-blend-screen blur-[80px] md:blur-[100px] will-change-[transform,opacity]"
+          style={{ background: 'radial-gradient(circle at 50% 50%, rgba(90,30,120,0.18) 0%, transparent 65%)', width: '60vw', height: '80vh', left: 'calc(50% - 30vw)', top: 'calc(50% - 40vh)' }}
           animate={{ scale: [1.05, 1, 1.05], opacity: [0.3, 0.6, 0.3] }}
           transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
         />
 
-        <div className="relative w-full flex flex-col gap-4 mt-8 md:mt-0 z-10">
+        <div className="relative flex flex-col gap-4 z-10 w-[82vw] mx-auto md:mx-0 md:absolute md:w-[42vw] md:[left:calc(38%_-_21vw)] md:[top:calc(50%_-_36vh)]">
           <motion.div
             layoutId={`artwork-container-${artwork.id}`}
             onMouseMove={hasHover ? handleMouseMove : undefined}
@@ -166,7 +166,7 @@ export function ArtworkDetail({ artwork, onClose, isActive = true }: { artwork: 
             onMouseUp={(e) => handleDragEnd(e.clientX)}
             onTouchStart={(e) => handleDragStart(e.touches[0].clientX)}
             onTouchEnd={(e) => handleDragEnd(e.changedTouches[0].clientX)}
-            className="relative w-full aspect-[4/5] md:aspect-auto md:h-[80vh] bg-void/50 overflow-hidden [transform-style:preserve-3d] cursor-grab active:cursor-grabbing select-none"
+            className="relative w-full h-[60vh] md:h-[72vh] overflow-hidden [transform-style:preserve-3d] cursor-grab active:cursor-grabbing select-none"
             style={{
               // Matches gallery card outer shadow exactly (Task 5)
               boxShadow: '0 40px 80px -20px rgba(35,15,60,0.8), 0 0 30px 2px rgba(90,30,120,0.2)',
@@ -200,7 +200,7 @@ export function ArtworkDetail({ artwork, onClose, isActive = true }: { artwork: 
                   src={allImages[activeIndex]}
                   alt={artwork.title}
                   fill
-                  className="object-cover transition-transform duration-[1200ms] hover:scale-[1.03]"
+                  className="object-cover object-top transition-transform duration-[1200ms] hover:scale-[1.03]"
                   priority
                 />
               </motion.div>
@@ -302,7 +302,7 @@ export function ArtworkDetail({ artwork, onClose, isActive = true }: { artwork: 
         variants={textContainerVariants}
         initial="hidden"
         animate="show"
-        className="flex flex-col gap-8 md:gap-12 py-4 md:py-12 z-10"
+        className="flex flex-col gap-8 md:gap-12 py-4 md:py-0 z-10 md:absolute md:right-[4vw] md:top-1/2 md:-translate-y-1/2 md:w-[22vw]"
       >
         <motion.div variants={textItemVariants} className="flex flex-col gap-4 border-b border-parchment/10 pb-8">
           <h1 className="text-parchment font-serif text-3xl sm:text-4xl md:text-6xl tracking-wide">{artwork.title}</h1>
