@@ -6,6 +6,7 @@ import { shaderMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import { extend } from '@react-three/fiber';
 import { useUiStore } from '@/store/useUiStore';
+import { galleryState } from '@/lib/galleryState';
 
 const ArchivalCanvasMaterial = shaderMaterial(
   {
@@ -136,12 +137,17 @@ const ShaderPlane = () => {
       materialRef.current.uniforms.uReduceMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0;
     }
     if (isCanvasPaused) return;
-    
-    velocityTracker.current.value += (scrollVelocity - velocityTracker.current.value) * 0.05;
+
+    // blend vertical (normal pages) + horizontal (gallery) scroll
+    // hScroll is in raw pixels; *0.6 maps it to roughly the same visual range as scrollY
+    const effectiveScroll = window.scrollY + galleryState.horizontalScroll * 0.6;
+    // hVelocity is px/frame from the RAF lerp; *8 scales it into Lenis velocity units
+    const effectiveVelocity = scrollVelocity + galleryState.horizontalVelocity * 8;
+    velocityTracker.current.value += (effectiveVelocity - velocityTracker.current.value) * 0.05;
 
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
-      materialRef.current.uniforms.uScroll.value = window.scrollY;
+      materialRef.current.uniforms.uScroll.value = effectiveScroll;
       materialRef.current.uniforms.uVelocity.value = velocityTracker.current.value;
       materialRef.current.uniforms.uResolution.value.set(state.size.width, state.size.height);
     }

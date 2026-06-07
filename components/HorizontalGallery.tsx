@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import artworksData from '@/src/data/artworks.json';
+import { galleryState } from '@/lib/galleryState';
+import { useUiStore } from '@/store/useUiStore';
 
 export interface Artwork {
   id: string;
@@ -34,15 +36,33 @@ export function HorizontalGallery({ onSelect }: HorizontalGalleryProps) {
   const targetRef = useRef(0);
   const rafRef = useRef<number>(0);
   const touchStartRef = useRef<number | null>(null);
+  const prevScrollRef = useRef(0);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const setCanvasPaused = useUiStore((state) => state.setCanvasPaused);
 
   const getMax = () =>
     typeof window !== 'undefined' ? Math.max(0, (total - 1) * window.innerWidth) : 0;
+
+  // Ensure canvas is alive + clean up shared gallery state on unmount
+  useEffect(() => {
+    setCanvasPaused(false);
+    return () => {
+      galleryState.horizontalScroll = 0;
+      galleryState.horizontalVelocity = 0;
+    };
+  }, [setCanvasPaused]);
 
   // RAF lerp loop
   useEffect(() => {
     const tick = () => {
       currentRef.current += (targetRef.current - currentRef.current) * 0.08;
+
+      // ── feed horizontal motion to the shader ──────────────────────
+      galleryState.horizontalVelocity = currentRef.current - prevScrollRef.current;
+      prevScrollRef.current = currentRef.current;
+      galleryState.horizontalScroll = currentRef.current;
+      // ─────────────────────────────────────────────────────────────
+
       if (trackRef.current) {
         trackRef.current.style.transform = `translateX(-${currentRef.current}px)`;
       }
@@ -128,6 +148,31 @@ export function HorizontalGallery({ onSelect }: HorizontalGalleryProps) {
             key={artwork.id}
             style={{ flex: '0 0 100vw', height: '100vh', position: 'relative' }}
           >
+            {/* artwork-colour ambient glow — echoes shader palette into surrounding void */}
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                inset: 0,
+                pointerEvents: 'none',
+                background: `radial-gradient(ellipse 55% 65% at 50% 44%, ${artwork.colors[0]}14 0%, transparent 70%)`,
+                filter: 'blur(70px)',
+                mixBlendMode: 'screen',
+              }}
+            />
+            {/* secondary violet wash — matches shader's particle layer tones */}
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                inset: 0,
+                pointerEvents: 'none',
+                background: 'radial-gradient(ellipse 45% 55% at 50% 44%, rgba(90,30,120,0.09) 0%, transparent 70%)',
+                filter: 'blur(90px)',
+                mixBlendMode: 'screen',
+              }}
+            />
+
             {/* Centred column — image frame + caption, vertically and horizontally centred */}
             <div
               style={{
@@ -162,6 +207,29 @@ export function HorizontalGallery({ onSelect }: HorizontalGalleryProps) {
                     priority={idx < 2}
                   />
                 </motion.div>
+
+                {/* radial vignette — feathers image edge into the void/shader */}
+                <div
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    pointerEvents: 'none',
+                    zIndex: 2,
+                    background: 'radial-gradient(ellipse 85% 85% at 50% 50%, transparent 40%, rgba(6,0,12,0.55) 78%, rgba(6,0,12,0.92) 100%)',
+                  }}
+                />
+                {/* inset shadow — tightens the frame edge */}
+                <div
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    pointerEvents: 'none',
+                    zIndex: 2,
+                    boxShadow: 'inset 0 0 50px 10px rgba(6,0,12,0.7)',
+                  }}
+                />
               </motion.div>
 
               {/* Caption — below image, not overlapping */}
